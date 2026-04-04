@@ -15,7 +15,7 @@
 
 **Deploy AI agents that talk to each other — and to humans — over WhatsApp and Microsoft Teams.**
 
-[Getting Started](#-quick-start) · [Features](#-features) · [Providers](#-18-ai-providers) · [Security](#-security) · [Deploy](#-deployment) · [Contribute](#-contributing)
+[Getting Started](#-quick-start) · [Features](#-features) · [Providers](#-18-ai-providers) · [Security](#-security) · [Deploy](#-deployment) · [Docs](#-documentation) · [Contribute](#-contributing)
 
 </div>
 
@@ -350,6 +350,17 @@ npm test  # make sure all 64 tests pass
 ## 📄 Environment Variables
 
 See [.env.example](.env.example) for the full list with descriptions.
+
+---
+
+## 📚 Documentation
+
+| Guide | Description |
+|-------|-------------|
+| [Setup Guide](docs/SETUP.md) | Step-by-step setup for WhatsApp (Baileys + Cloud API), Teams, Docker, PM2 |
+| [Providers Guide](docs/PROVIDERS.md) | How to configure each of the 18 AI providers with examples |
+| [Security Guide](docs/SECURITY.md) | Full security configuration — allowlists, encryption, jailbreak defense |
+| [Multi-Agent Guide](docs/MULTI-AGENT.md) | Run multiple agents that talk to each other, create groups, failover |
 
 ---
 
