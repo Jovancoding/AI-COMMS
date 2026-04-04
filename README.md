@@ -1,217 +1,278 @@
-# WhatsApp AI Network
+<div align="center">
 
-AI-to-AI communication network over WhatsApp and Microsoft Teams. Connect 18 different AI providers, form multi-agent groups, and let AI agents collaborate — all through messaging platforms.
+# 🤖 AI COMMS
 
-## Features
+### The open-source protocol for AI-to-AI communication
 
-- **18 AI Providers** — OpenAI, Anthropic, Google Gemini, Mistral, Cohere, Groq, Ollama, DeepSeek, xAI Grok, Perplexity, Together AI, Fireworks, Codex, GitHub Copilot, Claude Code, Claude Cowork, NVIDIA NIM, OpenClaw
-- **WhatsApp** — Baileys (free, QR scan) or Cloud API (official Meta webhook)
-- **Microsoft Teams** — Bot Framework SDK with proactive messaging
-- **AI Groups** — Virtual multi-agent groups with broadcast and shared context
-- **Agent Discovery** — Agents announce themselves and find each other on the network
-- **Provider Failover** — Automatic fallback chain if the primary AI provider fails
-- **Media Handling** — Receives images, audio, video, and documents from WhatsApp
-- **Security** — Allowlist/blocklist, rate limiting, HMAC agent auth, AES-256-GCM encryption, TLS
-- **Jailbreak Defense** — Multi-layered protection against prompt injection, DAN attacks, encoding tricks, persona hijacking, system prompt extraction
-- **Admin Commands** — Runtime management via `!status`, `!groups`, `!agents`, `!logs`
-- **Persistent Storage** — Conversations, groups, and agent registry survive restarts
-- **Audit Logging** — All security events logged to disk with auto-rotation
-- **Health Monitoring** — HTTP `/health` endpoint for load balancers and Docker
-- **Docker Ready** — Dockerfile, docker-compose, and PM2 config included
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Node.js](https://img.shields.io/badge/Node.js-%3E%3D20.0.0-green?logo=nodedotjs)](https://nodejs.org/)
+[![Tests](https://img.shields.io/badge/Tests-64%20passing-brightgreen?logo=checkmarx)](src/test-suite.js)
+[![Providers](https://img.shields.io/badge/AI%20Providers-18-blue?logo=openai)](src/providers/)
+[![WhatsApp](https://img.shields.io/badge/WhatsApp-Ready-25D366?logo=whatsapp&logoColor=white)](src/whatsapp/)
+[![Teams](https://img.shields.io/badge/Microsoft%20Teams-Ready-6264A7?logo=microsoftteams&logoColor=white)](src/teams/)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](Dockerfile)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/Jovancoding/AI-COMMS/pulls)
 
-## Quick Start
+**Deploy AI agents that talk to each other — and to humans — over WhatsApp and Microsoft Teams.**
 
-### 1. Install
+[Getting Started](#-quick-start) · [Features](#-features) · [Providers](#-18-ai-providers) · [Security](#-security) · [Deploy](#-deployment) · [Contribute](#-contributing)
 
-```bash
-git clone <your-repo-url>
-cd whatsapp-ai-network
-npm install
+</div>
+
+---
+
+## 🎯 What is AI COMMS?
+
+AI COMMS is a multi-agent communication network that connects AI models together through messaging platforms humans already use. Instead of building custom APIs for every agent, just give each one a phone number.
+
+```
+┌─────────────┐    WhatsApp     ┌─────────────┐
+│  GPT-4o     │◄──────────────►│  Claude      │
+│  Agent      │    Encrypted    │  Agent       │
+└──────┬──────┘    Protocol     └──────┬───────┘
+       │                               │
+       │         ┌─────────┐           │
+       └────────►│  Human  │◄──────────┘
+                 │  User   │
+                 └─────────┘
 ```
 
-### 2. Configure
+- **Agent A** runs OpenAI on phone number 1
+- **Agent B** runs Anthropic on phone number 2
+- They message each other over WhatsApp using an encrypted JSON protocol
+- Humans can jump into the conversation naturally
+- If OpenAI goes down, Agent A automatically fails over to Google Gemini
+
+**No servers to expose. No webhooks to configure. No custom APIs. Just WhatsApp.**
+
+---
+
+## ✨ Features
+
+| Feature | Description |
+|---------|-------------|
+| 🔌 **18 AI Providers** | Plug in any major AI model with one env variable |
+| 💬 **WhatsApp + Teams** | Works on platforms people already use |
+| 🤝 **Agent Protocol** | Structured JSON messaging between AI agents |
+| 👥 **Multi-Agent Groups** | Create groups with multiple AI agents + humans |
+| 🔐 **End-to-End Encryption** | AES-256-GCM encrypted payloads between agents |
+| 🛡️ **Jailbreak Defense** | 6-layer protection against prompt injection attacks |
+| 🔄 **Auto Failover** | Primary provider down? Fallback chain kicks in |
+| 📊 **Health Monitoring** | `/health` endpoint for load balancers and Docker |
+| 🗂️ **Persistent Storage** | Conversations, groups, and registry survive restarts |
+| 📝 **Audit Logging** | Every security event logged and rotated |
+| 🐳 **Docker Ready** | One command to deploy |
+| ⚡ **Production Hardened** | Graceful shutdown, timeouts, env validation, write safety |
+
+---
+
+## 🚀 Quick Start
 
 ```bash
+git clone https://github.com/Jovancoding/AI-COMMS.git
+cd AI-COMMS
+npm install
 cp .env.example .env
 ```
 
-Edit `.env` and fill in at minimum:
-- `AI_PROVIDER` — which provider to use (e.g. `openai`)
-- The API key for that provider (e.g. `OPENAI_API_KEY`)
-- `PLATFORM` — `whatsapp`, `teams`, or `both`
+Set your provider in `.env`:
 
-### 3. Run
+```bash
+AI_PROVIDER=openai
+OPENAI_API_KEY=sk-...
+```
+
+Start:
 
 ```bash
 npm start
 ```
 
-For WhatsApp (Baileys mode): scan the QR code in the terminal to link your phone.
+Scan the QR code in your terminal → your AI agent is live on WhatsApp.
 
-### 4. Test without WhatsApp
+---
 
-```bash
-npm test
-```
+## 🧠 18 AI Providers
 
-Opens a CLI chat where you can talk to your AI, simulate agent messages, and test groups.
+Switch providers with a single environment variable. Every provider has fetch timeouts, error handling, and failover built in.
 
-### 5. Run automated tests
+| Provider | Model | Env Key |
+|----------|-------|---------|
+| **OpenAI** | GPT-4o | `OPENAI_API_KEY` |
+| **Anthropic** | Claude Sonnet 4 | `ANTHROPIC_API_KEY` |
+| **Google** | Gemini 2.0 Flash | `GOOGLE_API_KEY` |
+| **Mistral** | Mistral Large | `MISTRAL_API_KEY` |
+| **Cohere** | Command R+ | `COHERE_API_KEY` |
+| **Groq** | LLaMA 3.3 70B | `GROQ_API_KEY` |
+| **DeepSeek** | DeepSeek Chat | `DEEPSEEK_API_KEY` |
+| **xAI** | Grok 2 | `XAI_API_KEY` |
+| **Perplexity** | Sonar Pro | `PERPLEXITY_API_KEY` |
+| **Together AI** | LLaMA 3 70B | `TOGETHER_API_KEY` |
+| **Fireworks** | LLaMA 3.1 70B | `FIREWORKS_API_KEY` |
+| **NVIDIA NIM** | Nemotron 3 Super | `NVIDIA_API_KEY` |
+| **OpenClaw** | Any (self-hosted) | `OPENCLAW_BASE_URL` |
+| **Ollama** | LLaMA 3 (local) | `OLLAMA_BASE_URL` |
+| **Codex** | o4-mini | `OPENAI_API_KEY` |
+| **GitHub Copilot** | GPT-4o via GitHub | `COPILOT_TOKEN` |
+| **Claude Code** | Claude + thinking | `ANTHROPIC_API_KEY` |
+| **Claude Cowork** | Claude + collab | `ANTHROPIC_API_KEY` |
 
-```bash
-node src/test-suite.js
-```
-
-## Architecture
-
-```
-src/
-├── index.js              # Entry point — starts platforms + health server
-├── orchestrator.js       # Message routing — security → AI → response
-├── config.js             # All environment variable mappings
-├── protocol.js           # Agent-to-agent JSON protocol
-├── groups.js             # Multi-agent group management (persistent)
-├── storage.js            # JSON file persistence (data/)
-├── security.js           # Allowlist, rate limit, HMAC auth, input sanitization
-├── jailbreak-defense.js  # Multi-layered prompt injection defense
-├── encryption.js         # AES-256-GCM payload encryption
-├── audit-log.js          # Persistent audit logging (logs/)
-├── startup-checks.js     # Security config validation on boot
-├── failover.js           # Provider failover with retry chain
-├── rate-limiter.js       # Token-bucket rate limiting per provider
-├── health.js             # HTTP /health endpoint
-├── discovery.js          # Agent registry and announcement protocol
-├── admin.js              # Runtime admin commands (!status, etc.)
-├── media.js              # Image/audio/video/document handler
-├── test-cli.js           # Interactive CLI test mode
-├── test-suite.js         # Automated test suite (64 tests)
-├── whatsapp/
-│   ├── baileys-client.js   # WhatsApp via QR scan (free)
-│   └── cloud-api-client.js # WhatsApp via Meta Cloud API
-├── teams/
-│   └── teams-client.js     # Microsoft Teams Bot Framework
-└── providers/
-    ├── index.js          # Provider router (lazy loading)
-    ├── openai.js         # OpenAI (GPT-4o)
-    ├── anthropic.js      # Anthropic (Claude)
-    ├── google.js         # Google (Gemini)
-    ├── mistral.js        # Mistral AI
-    ├── cohere.js         # Cohere (Command R+)
-    ├── groq.js           # Groq (fast LLaMA/Mixtral)
-    ├── ollama.js         # Ollama (local LLMs)
-    ├── deepseek.js       # DeepSeek
-    ├── xai.js            # xAI (Grok)
-    ├── perplexity.js     # Perplexity (Sonar)
-    ├── together.js       # Together AI
-    ├── fireworks.js      # Fireworks AI
-    ├── codex.js          # OpenAI Codex
-    ├── copilot.js        # GitHub Copilot / Models
-    ├── claude-code.js    # Claude Code (extended thinking)
-    ├── claude-cowork.js  # Claude Cowork (collaborative)
-    ├── nvidia-nim.js     # NVIDIA NIM
-    └── openclaw.js       # OpenClaw
-```
-
-## Agent-to-Agent Protocol
-
-Agents communicate using a JSON envelope:
-
-```json
-{
-  "protocol": "whatsapp-ai-network",
-  "version": "1.0",
-  "from": { "agentId": "agent_001", "agentName": "MyAI" },
-  "to": { "agentId": "agent_002", "agentName": "FriendAI" },
-  "intent": "chat",
-  "payload": "Hello from one AI to another!",
-  "conversationId": "conv_abc123",
-  "timestamp": "2026-04-04T12:00:00.000Z"
-}
-```
-
-Messages can be signed (HMAC-SHA256) and encrypted (AES-256-GCM) for secure agent-to-agent communication.
-
-## Security
-
-### Layers
-
-| Layer | What it does |
-|-------|-------------|
-| Allowlist/Blocklist | Control who can message the agent |
-| Rate Limiting | Prevent message flooding (per sender) |
-| Message Size Cap | Reject oversized messages |
-| HMAC Authentication | Verify agent-to-agent messages with shared secret |
-| Replay Protection | Reject stale or future-dated agent messages |
-| Input Sanitization | Detect prompt injection patterns |
-| Jailbreak Defense | Block DAN attacks, encoding tricks, persona hijacks |
-| Output Validation | Block responses that leak system prompts |
-| Payload Encryption | AES-256-GCM for agent message payloads |
-| TLS | HTTPS for webhook servers |
-| Audit Logging | All events logged to `logs/audit.log` |
-| Webhook Signatures | Verify Meta's `X-Hub-Signature-256` header |
-
-### Enable security in `.env`
-
-```bash
-SECURITY_ENABLE_ALLOWLIST=true
-SECURITY_ALLOWLIST=+1234567890,+0987654321
-SECURITY_BLOCK_PROMPT_INJECTION=true
-SECURITY_REQUIRE_AGENT_AUTH=true
-SECURITY_AGENT_SECRET=<generate-with: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))">
-SECURITY_ENCRYPTION_KEY=<generate-with: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))">
-```
-
-## Provider Failover
-
-Set fallback providers that kick in automatically if the primary fails:
+### Provider Failover
 
 ```bash
 AI_PROVIDER=openai
 AI_FALLBACK_PROVIDERS=anthropic,google,groq
 ```
 
-## Admin Commands
+If OpenAI fails → tries Anthropic → tries Google → tries Groq. Automatic. Zero downtime.
 
-Add your phone number to `ADMIN_LIST` in `.env`, then send these via WhatsApp:
+---
 
-| Command | Description |
-|---------|-------------|
-| `!status` | Agent status, uptime, memory |
-| `!groups` | List all groups |
-| `!agents` | List registered agents |
-| `!logs [n]` | Recent audit log entries |
-| `!provider` | Current AI provider |
-| `!security` | Security configuration |
-| `!help` | All admin commands |
+## 🔒 Security
 
-## Health Monitoring
+AI COMMS was built with a security-first mindset. Every layer is configurable.
 
-The agent exposes an HTTP health endpoint (default port 9090):
-
-```bash
-curl http://localhost:9090/health
+```
+Incoming Message
+       │
+       ▼
+┌──────────────┐
+│  Allowlist   │──► Block unknown senders
+├──────────────┤
+│  Rate Limit  │──► Block message flooding
+├──────────────┤
+│  Size Check  │──► Block oversized payloads
+├──────────────┤
+│  HMAC Auth   │──► Verify agent identity
+├──────────────┤
+│  Jailbreak   │──► Block prompt injection (6 layers)
+│  Defense     │    · Pattern matching (40+ signatures)
+│              │    · Encoding detection (base64, hex, reversed)
+│              │    · Persona hijack blocking
+│              │    · System prompt extraction prevention
+│              │    · Multi-turn escalation tracking
+│              │    · Output validation
+├──────────────┤
+│  Encryption  │──► AES-256-GCM + HMAC-SHA256
+├──────────────┤
+│  Audit Log   │──► Everything logged to disk
+└──────────────┘
+       │
+       ▼
+    AI Provider
 ```
 
-Returns:
+### Enable in `.env`
+
+```bash
+SECURITY_ENABLE_ALLOWLIST=true
+SECURITY_ALLOWLIST=+1234567890,+0987654321
+SECURITY_BLOCK_PROMPT_INJECTION=true
+SECURITY_REQUIRE_AGENT_AUTH=true
+SECURITY_AGENT_SECRET=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
+SECURITY_ENCRYPTION_KEY=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
+```
+
+---
+
+## 📡 Agent-to-Agent Protocol
+
+Agents communicate using a structured JSON envelope:
+
 ```json
 {
-  "status": "ok",
-  "agent": "MyAI",
-  "provider": "openai",
-  "uptime": 3600,
-  "stats": { "messagesReceived": 150, "messagesSent": 148, "errors": 2 }
+  "protocol": "ai-comms",
+  "version": "1.0",
+  "from": { "agentId": "agent_001", "agentName": "Atlas" },
+  "to": { "agentId": "agent_002", "agentName": "Nova" },
+  "intent": "chat",
+  "payload": "What's the latest on the research paper?",
+  "conversationId": "conv_abc123",
+  "timestamp": "2026-04-04T12:00:00.000Z"
 }
 ```
 
-## Deployment
+Messages are signed with HMAC-SHA256 and encrypted with AES-256-GCM. Replay attacks are blocked by timestamp validation.
 
-### Docker
+---
+
+## 👥 Multi-Agent Groups
+
+Create virtual groups where multiple AI agents and humans collaborate:
+
+```
+You (WhatsApp): Create a research group with Nova and Atlas
+
+Agent: ✓ Group created: "Research Team" (3 members)
+       Broadcasting to all members...
+```
+
+Agents can:
+- Join and leave groups
+- Broadcast to all members
+- Share conversation context
+- Delegate tasks between each other
+
+---
+
+## 🛠️ Admin Commands
+
+Add your number to `ADMIN_LIST` in `.env`, then control your agent from WhatsApp:
+
+| Command | What it does |
+|---------|-------------|
+| `!status` | Agent status, uptime, memory usage |
+| `!groups` | List all multi-agent groups |
+| `!agents` | Show registered agents on the network |
+| `!logs 20` | Last 20 audit log entries |
+| `!provider` | Current AI provider and model |
+| `!security` | Security config overview |
+| `!help` | All available commands |
+
+---
+
+## 📐 Architecture
+
+```
+src/
+├── index.js              # Entry — platforms + health + graceful shutdown
+├── orchestrator.js       # Message routing: security → AI → response
+├── config.js             # Environment variable mappings
+├── protocol.js           # Agent-to-agent JSON protocol
+├── groups.js             # Multi-agent group management
+├── storage.js            # JSON persistence with write safety
+├── security.js           # Allowlist, rate limit, HMAC auth
+├── jailbreak-defense.js  # 6-layer prompt injection defense
+├── encryption.js         # AES-256-GCM payload encryption
+├── failover.js           # Provider failover chain
+├── rate-limiter.js       # Token-bucket rate limiter
+├── health.js             # HTTP /health + /ready endpoints
+├── discovery.js          # Agent registry + announcements
+├── admin.js              # WhatsApp admin commands
+├── media.js              # Image/audio/video/document handler
+├── audit-log.js          # Persistent event logging
+├── safe-fetch.js         # Fetch wrapper with timeouts
+├── startup-checks.js     # Boot-time security validation
+├── test-suite.js         # 64 automated tests
+├── whatsapp/
+│   ├── baileys-client.js    # WhatsApp via QR scan (free)
+│   └── cloud-api-client.js  # WhatsApp via Meta Cloud API
+├── teams/
+│   └── teams-client.js      # Microsoft Teams Bot Framework
+└── providers/               # 18 AI provider adapters
+```
+
+---
+
+## 🐳 Deployment
+
+### Docker (recommended)
 
 ```bash
 docker compose up -d
 ```
 
-### PM2
+### PM2 (process manager)
 
 ```bash
 npm install -g pm2
@@ -225,10 +286,83 @@ pm2 save
 NODE_ENV=production node src/index.js
 ```
 
-## Environment Variables
+### Health Check
+
+```bash
+curl http://localhost:9090/health
+```
+
+```json
+{
+  "status": "ok",
+  "agent": "MyAI",
+  "provider": "openai",
+  "uptime": 3600,
+  "stats": { "messagesReceived": 150, "messagesSent": 148, "errors": 2 }
+}
+```
+
+---
+
+## 🧪 Tests
+
+64 automated tests covering the full stack:
+
+```bash
+npm test
+```
+
+```
+=== AI COMMS — Test Suite ===
+
+  ✓ config loads
+  ✓ protocol builds valid envelope
+  ✓ createGroup works
+  ✓ AES-256-GCM roundtrip works
+  ✓ checkJailbreak blocks direct injection
+  ✓ checkJailbreak blocks persona hijack (DAN)
+  ✓ validateOutput catches system prompt leaks
+  ... (64 total)
+
+Results: 64 passed, 0 failed
+```
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Open an issue or PR for:
+
+- New AI provider adapters
+- New messaging platform integrations
+- Security improvements
+- Bug fixes
+
+```bash
+git clone https://github.com/Jovancoding/AI-COMMS.git
+cd AI-COMMS
+npm install
+npm test  # make sure all 64 tests pass
+```
+
+---
+
+## 📄 Environment Variables
 
 See [.env.example](.env.example) for the full list with descriptions.
 
-## License
+---
 
-ISC
+## 📜 License
+
+[MIT](LICENSE) — use it however you want.
+
+---
+
+<div align="center">
+
+**Built for the multi-agent future.**
+
+⭐ Star this repo if AI agents talking to each other over WhatsApp sounds as cool to you as it does to us.
+
+</div>

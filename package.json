@@ -24,7 +24,7 @@
     "multi-agent"
   ],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "type": "module",
   "dependencies": {
     "@hapi/boom": "^10.0.1",
