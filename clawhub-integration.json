@@ -1,0 +1,114 @@
+{
+  "name": "ai-comms",
+  "displayName": "AI COMMS — Multi-Agent Communication Network",
+  "version": "1.0.0",
+  "type": "integration",
+  "description": "Deploy your OpenClaw instance as a WhatsApp-connected AI agent. Supports AI-to-AI messaging, multi-agent groups, encrypted communication, and failover across 18 providers including NemoClaw (NVIDIA NIM).",
+  "repository": "https://github.com/Jovancoding/AI-COMMS",
+  "license": "ISC",
+
+  "compatibility": {
+    "openclaw": ">=1.0.0",
+    "node": ">=20.0.0"
+  },
+
+  "providers": {
+    "openclaw": {
+      "role": "primary",
+      "description": "Routes messages through your OpenClaw Gateway to whatever backend model you have configured.",
+      "endpoints": [
+        { "path": "/api/chat", "method": "POST", "type": "native" },
+        { "path": "/v1/chat/completions", "method": "POST", "type": "openai-compatible", "fallback": true }
+      ]
+    },
+    "nvidia-nim": {
+      "role": "companion",
+      "description": "NemoClaw — connects to NVIDIA NIM inference endpoints for heavy-duty reasoning with Nemotron, Llama, and other models.",
+      "endpoints": [
+        { "path": "/chat/completions", "method": "POST", "type": "openai-compatible" }
+      ]
+    }
+  },
+
+  "features": [
+    "whatsapp-messaging",
+    "teams-messaging",
+    "ai-to-ai-protocol",
+    "multi-agent-groups",
+    "hmac-agent-auth",
+    "aes-256-gcm-encryption",
+    "provider-failover",
+    "jailbreak-defense",
+    "rate-limiting",
+    "audit-logging",
+    "admin-commands",
+    "agent-discovery",
+    "media-handling",
+    "health-monitoring"
+  ],
+
+  "configuration": {
+    "required": [
+      {
+        "key": "OPENCLAW_BASE_URL",
+        "description": "URL of your running OpenClaw Gateway",
+        "default": "http://localhost:18789"
+      }
+    ],
+    "optional": [
+      {
+        "key": "OPENCLAW_AUTH_TOKEN",
+        "description": "Bearer token for authenticating with your OpenClaw instance"
+      },
+      {
+        "key": "OPENCLAW_SESSION",
+        "description": "Session ID for conversation continuity",
+        "default": "main"
+      },
+      {
+        "key": "OPENCLAW_MODEL",
+        "description": "Model override (defaults to whatever OpenClaw is configured with)",
+        "default": "default"
+      },
+      {
+        "key": "NVIDIA_API_KEY",
+        "description": "NVIDIA NIM API key (for NemoClaw failover). Get one at https://build.nvidia.com"
+      },
+      {
+        "key": "NVIDIA_NIM_MODEL",
+        "description": "NVIDIA NIM model to use",
+        "default": "nvidia/nemotron-3-super-120b-a12b"
+      },
+      {
+        "key": "AI_FALLBACK_PROVIDERS",
+        "description": "Comma-separated failover chain, e.g. 'nvidia-nim,groq,anthropic'"
+      },
+      {
+        "key": "SECURITY_AGENT_SECRET",
+        "description": "Shared HMAC secret for agent-to-agent authentication (min 32 chars)"
+      }
+    ]
+  },
+
+  "quickstart": {
+    "steps": [
+      "Clone the repository and run: npm install",
+      "Copy .env.example to .env",
+      "Set AI_PROVIDER=openclaw and OPENCLAW_BASE_URL to your gateway",
+      "Set AGENT_NAME and AGENT_ID for your agent's identity",
+      "Run: npm start (scans QR code to connect WhatsApp)",
+      "Optional: Set AI_FALLBACK_PROVIDERS=nvidia-nim and add NVIDIA_API_KEY for NemoClaw failover"
+    ]
+  },
+
+  "tags": [
+    "whatsapp",
+    "ai-agents",
+    "multi-agent",
+    "openclaw",
+    "nemoclaw",
+    "nvidia-nim",
+    "chatbot",
+    "messaging"
+  ]
+}

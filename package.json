@@ -1,0 +1,36 @@
+{
+  "name": "ai-comms",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AI-to-AI communication network over WhatsApp and Microsoft Teams. 18 providers, encrypted agent protocol, multi-agent groups, jailbreak defense.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Jovancoding/AI-COMMS.git"
+  },
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "test": "node src/test-suite.js",
+    "check": "node --check src/index.js"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "keywords": [
+    "ai",
+    "whatsapp",
+    "agents",
+    "multi-agent"
+  ],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "@hapi/boom": "^10.0.1",
+    "@whiskeysockets/baileys": "^7.0.0-rc.9",
+    "botbuilder": "^4.23.3",
+    "dotenv": "^17.4.0",
+    "express": "^5.2.1"
+  }
+}

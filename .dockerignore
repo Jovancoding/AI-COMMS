@@ -1,0 +1,9 @@
+node_modules
+.env
+auth_info
+logs
+data
+*.pem
+*.key
+*.cert
+.git

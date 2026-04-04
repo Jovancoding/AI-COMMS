@@ -1,0 +1,16 @@
+services:
+  ai-agent:
+    build: .
+    container_name: whatsapp-ai-agent
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "9090:9090"     # Health check
+      - "3000:3000"     # WhatsApp Cloud API webhook
+      - "3978:3978"     # Microsoft Teams webhook
+    volumes:
+      - ./auth_info:/app/auth_info    # WhatsApp session (Baileys)
+      - ./data:/app/data              # Persistent storage
+      - ./logs:/app/logs              # Audit logs
+    environment:
+      - NODE_ENV=production
