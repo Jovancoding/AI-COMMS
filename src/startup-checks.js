@@ -161,6 +161,11 @@ function validateEnv() {
     if (!config.teams.appPassword) errors.push('TEAMS_APP_PASSWORD is required when platform includes Teams.');
   }
 
+  // Check Telegram has required fields
+  if (platform === 'telegram' || platform === 'both') {
+    if (!config.telegram.botToken) errors.push('TELEGRAM_BOT_TOKEN is required when platform includes Telegram.');
+  }
+
   if (errors.length > 0) {
     for (const e of errors) {
       console.error(`[Config Error] ${e}`);

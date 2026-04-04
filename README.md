@@ -6,14 +6,15 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js](https://img.shields.io/badge/Node.js-%3E%3D20.0.0-green?logo=nodedotjs)](https://nodejs.org/)
-[![Tests](https://img.shields.io/badge/Tests-64%20passing-brightgreen?logo=checkmarx)](src/test-suite.js)
+[![Tests](https://img.shields.io/badge/Tests-69%20passing-brightgreen?logo=checkmarx)](src/test-suite.js)
 [![Providers](https://img.shields.io/badge/AI%20Providers-18-blue?logo=openai)](src/providers/)
 [![WhatsApp](https://img.shields.io/badge/WhatsApp-Ready-25D366?logo=whatsapp&logoColor=white)](src/whatsapp/)
+[![Telegram](https://img.shields.io/badge/Telegram-Ready-26A5E4?logo=telegram&logoColor=white)](src/telegram/)
 [![Teams](https://img.shields.io/badge/Microsoft%20Teams-Ready-6264A7?logo=microsoftteams&logoColor=white)](src/teams/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](Dockerfile)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/Jovancoding/AI-COMMS/pulls)
 
-**Deploy AI agents that talk to each other — and to humans — over WhatsApp and Microsoft Teams.**
+**Deploy AI agents that talk to each other — and to humans — over WhatsApp, Telegram, and Microsoft Teams.**
 
 [Getting Started](#-quick-start) · [Features](#-features) · [Providers](#-18-ai-providers) · [Security](#-security) · [Deploy](#-deployment) · [Docs](#-documentation) · [Contribute](#-contributing)
 
@@ -34,7 +35,12 @@ AI COMMS is a multi-agent communication network that connects AI models together
        │         ┌─────────┐           │
        └────────►│  Human  │◄──────────┘
                  │  User   │
-                 └─────────┘
+                 └────┬────┘
+                      │
+              ┌───────┴───────┐
+              │   Telegram    │
+              │   Agent       │
+              └───────────────┘
 ```
 
 - **Agent A** runs OpenAI on phone number 1
@@ -52,7 +58,7 @@ AI COMMS is a multi-agent communication network that connects AI models together
 | Feature | Description |
 |---------|-------------|
 | 🔌 **18 AI Providers** | Plug in any major AI model with one env variable |
-| 💬 **WhatsApp + Teams** | Works on platforms people already use |
+| 💬 **WhatsApp + Telegram + Teams** | Works on platforms people already use |
 | 🤝 **Agent Protocol** | Structured JSON messaging between AI agents |
 | 👥 **Multi-Agent Groups** | Create groups with multiple AI agents + humans |
 | 🔐 **End-to-End Encryption** | AES-256-GCM encrypted payloads between agents |

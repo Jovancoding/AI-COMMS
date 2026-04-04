@@ -63,6 +63,14 @@ async function startTeams() {
   return client;
 }
 
+async function startTelegram() {
+  const { TelegramClient } = await import('./telegram/telegram-client.js');
+  const client = new TelegramClient();
+  await client.connect();
+  attachListeners(client, 'Telegram');
+  return client;
+}
+
 // ---- Global error handlers ----
 process.on('unhandledRejection', (reason) => {
   console.error('[Fatal] Unhandled promise rejection:', reason);
@@ -130,8 +138,13 @@ async function main() {
     activeClients.push(client);
   }
 
-  if (!['whatsapp', 'teams', 'both'].includes(platform)) {
-    console.error(`Unknown platform "${platform}". Use: whatsapp | teams | both`);
+  if (platform === 'telegram' || platform === 'both') {
+    const client = await startTelegram();
+    activeClients.push(client);
+  }
+
+  if (!['whatsapp', 'teams', 'telegram', 'both'].includes(platform)) {
+    console.error(`Unknown platform "${platform}". Use: whatsapp | teams | telegram | both`);
     process.exit(1);
   }
 }

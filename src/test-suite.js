@@ -75,6 +75,12 @@ test('config has all 18 providers', () => {
   }
 });
 
+test('config has telegram section', () => {
+  assert(config.telegram !== undefined, 'no telegram config');
+  assert(typeof config.telegram.botToken === 'string', 'botToken should be string');
+  assert(typeof config.telegram.webhookPort === 'number', 'webhookPort should be number');
+});
+
 // --- 2. Protocol ---
 console.log('\n[Protocol]');
 const { createAgentMessage, parseIncoming, createReply } = await import('./protocol.js');
@@ -550,6 +556,30 @@ test('describeMedia formats correctly', () => {
 
 test('describeMedia returns null for null', () => {
   assert(media.describeMedia(null) === null, 'should return null');
+});
+
+// --- 18. Telegram Client ---
+console.log('\n[Telegram Client]');
+const { TelegramClient } = await import('./telegram/telegram-client.js');
+
+test('TelegramClient is a constructor', () => {
+  assert(typeof TelegramClient === 'function', 'should be a function');
+});
+
+test('TelegramClient extends EventEmitter', () => {
+  const client = new TelegramClient();
+  assert(typeof client.on === 'function', 'should have on()');
+  assert(typeof client.emit === 'function', 'should have emit()');
+});
+
+test('TelegramClient has sendMessage method', () => {
+  const client = new TelegramClient();
+  assert(typeof client.sendMessage === 'function', 'should have sendMessage');
+});
+
+test('TelegramClient has close method', () => {
+  const client = new TelegramClient();
+  assert(typeof client.close === 'function', 'should have close');
 });
 
 // --- Summary ---

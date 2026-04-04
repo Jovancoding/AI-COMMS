@@ -29,6 +29,13 @@ const config = {
     port: parseInt(process.env.TEAMS_PORT || '3978'),
   },
 
+  // Telegram
+  telegram: {
+    botToken: process.env.TELEGRAM_BOT_TOKEN || '',
+    webhookUrl: process.env.TELEGRAM_WEBHOOK_URL || '',
+    webhookPort: parseInt(process.env.TELEGRAM_WEBHOOK_PORT || '8443'),
+  },
+
   // All provider configs
   providers: {
     openai: {

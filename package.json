@@ -1,7 +1,7 @@
 {
   "name": "ai-comms",
   "version": "1.0.0",
-  "description": "AI-to-AI communication network over WhatsApp and Microsoft Teams. 18 providers, encrypted agent protocol, multi-agent groups, jailbreak defense.",
+  "description": "AI-to-AI communication network over WhatsApp, Telegram, and Microsoft Teams. 18 providers, encrypted agent protocol, multi-agent groups, jailbreak defense.",
   "repository": {
     "type": "git",
     "url": "https://github.com/Jovancoding/AI-COMMS.git"
@@ -41,6 +41,7 @@
     "groq",
     "nvidia",
     "teams",
+    "telegram",
     "messaging",
     "encryption",
     "protocol"
@@ -53,6 +54,7 @@
     "@whiskeysockets/baileys": "^7.0.0-rc.9",
     "botbuilder": "^4.23.3",
     "dotenv": "^17.4.0",
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "node-telegram-bot-api": "^0.67.0"
   }
 }
