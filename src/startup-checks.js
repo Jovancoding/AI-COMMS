@@ -76,6 +76,11 @@ function checkConfigHygiene() {
     warnings.push('Cloud API webhook has no TLS configured. Deploy behind a reverse proxy with HTTPS or set TLS_CERT_PATH/TLS_KEY_PATH.');
   }
 
+  // Check if remote agent is enabled
+  if (config.remoteAgent.enabled) {
+    warnings.push(`Remote Agent is ENABLED — ${config.remoteAgent.allowlist.length} sender(s) can execute commands on this machine via messaging. Disable with REMOTE_AGENT_ENABLED=false if not needed.`);
+  }
+
   for (const w of warnings) {
     console.warn(`[Security Warning] ${w}`);
     auditLog('WARN', 'config-hygiene', { warning: w });
@@ -164,6 +169,13 @@ function validateEnv() {
   // Check Telegram has required fields
   if (platform === 'telegram' || platform === 'both') {
     if (!config.telegram.botToken) errors.push('TELEGRAM_BOT_TOKEN is required when platform includes Telegram.');
+  }
+
+  // Check Remote Agent safety
+  if (config.remoteAgent.enabled) {
+    if (config.remoteAgent.allowlist.length === 0) {
+      errors.push('REMOTE_AGENT_ENABLED=true but REMOTE_AGENT_ALLOWLIST is empty. This is required for security.');
+    }
   }
 
   if (errors.length > 0) {

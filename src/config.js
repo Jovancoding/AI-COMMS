@@ -154,6 +154,13 @@ const config = {
     tlsCertPath: process.env.TLS_CERT_PATH || '',
     tlsKeyPath: process.env.TLS_KEY_PATH || '',
   },
+
+  // Remote Agent — execute real work via messaging
+  remoteAgent: {
+    enabled: process.env.REMOTE_AGENT_ENABLED === 'true',
+    allowlist: (process.env.REMOTE_AGENT_ALLOWLIST || '').split(',').map(s => s.trim()).filter(Boolean),
+    workspace: process.env.REMOTE_AGENT_WORKSPACE || '.',
+  },
 };
 
 export default config;

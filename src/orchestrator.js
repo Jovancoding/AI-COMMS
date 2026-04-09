@@ -22,6 +22,7 @@ import { describeMedia } from './media.js';
 import { handleAnnouncement, markAgentSeen } from './discovery.js';
 import { handleAdminCommand } from './admin.js';
 import { recordIncoming, recordOutgoing, recordError } from './health.js';
+import { isRemoteTask, handleRemoteTask } from './remote-agent.js';
 
 const BASE_PROMPT = `You are ${config.agent.name}, a personal AI assistant connected to WhatsApp.
 You can communicate with both humans and other AI agents.
@@ -80,6 +81,14 @@ export async function handleMessage(sender, text, whatsappClient, isGroup = fals
 
   // --- Admin commands (bypass normal flow) ---
   if (!isGroup && incoming.type !== 'agent') {
+    // Remote agent tasks: !do or !task
+    if (isRemoteTask(text)) {
+      const result = await handleRemoteTask(sender, text, whatsappClient);
+      await whatsappClient.sendMessage(sender, result);
+      recordOutgoing();
+      return;
+    }
+
     const adminResult = await handleAdminCommand(sender, text);
     if (adminResult) {
       await whatsappClient.sendMessage(sender, adminResult);

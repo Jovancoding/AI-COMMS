@@ -8,7 +8,7 @@
 [![npm](https://img.shields.io/npm/v/ai-comms?logo=npm&color=CB3837)](https://www.npmjs.com/package/ai-comms)
 [![npm downloads](https://img.shields.io/npm/dw/ai-comms?logo=npm&color=CB3837)](https://www.npmjs.com/package/ai-comms)
 [![Node.js](https://img.shields.io/badge/Node.js-%3E%3D20.0.0-green?logo=nodedotjs)](https://nodejs.org/)
-[![Tests](https://img.shields.io/badge/Tests-69%20passing-brightgreen?logo=checkmarx)](src/test-suite.js)
+[![Tests](https://img.shields.io/badge/Tests-74%20passing-brightgreen?logo=checkmarx)](src/test-suite.js)
 [![Providers](https://img.shields.io/badge/AI%20Providers-18-blue?logo=openai)](src/providers/)
 [![WhatsApp](https://img.shields.io/badge/WhatsApp-Ready-25D366?logo=whatsapp&logoColor=white)](src/whatsapp/)
 [![Telegram](https://img.shields.io/badge/Telegram-Ready-26A5E4?logo=telegram&logoColor=white)](src/telegram/)

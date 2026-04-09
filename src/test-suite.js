@@ -582,6 +582,32 @@ test('TelegramClient has close method', () => {
   assert(typeof client.close === 'function', 'should have close');
 });
 
+// --- 19. Remote Agent ---
+console.log('\n[Remote Agent]');
+const remoteAgent = await import('./remote-agent.js');
+
+test('isRemoteTask detects !do command', () => {
+  assert(remoteAgent.isRemoteTask('!do create a hello.txt file') === false, 'should be false when disabled');
+});
+
+test('isRemoteTask rejects normal messages', () => {
+  assert(remoteAgent.isRemoteTask('hello world') === false, 'should reject normal text');
+  assert(remoteAgent.isRemoteTask('do something') === false, 'should reject without prefix');
+});
+
+test('handleRemoteTask blocks non-allowlisted senders', async () => {
+  const result = await remoteAgent.handleRemoteTask('unknown-sender', '!do list files', { sendMessage: async () => {} });
+  assert(result.includes('denied'), 'should deny non-allowlisted sender');
+});
+
+test('remote agent exports handleRemoteTask function', () => {
+  assert(typeof remoteAgent.handleRemoteTask === 'function', 'should export handleRemoteTask');
+});
+
+test('remote agent exports isRemoteTask function', () => {
+  assert(typeof remoteAgent.isRemoteTask === 'function', 'should export isRemoteTask');
+});
+
 // --- Summary ---
 console.log('\n===========================================');
 console.log(`  Results: ${passed} passed, ${failed} failed, ${passed + failed} total`);
