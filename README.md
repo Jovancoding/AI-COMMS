@@ -31,6 +31,20 @@
 
 AI COMMS is an agent communication network. It gives AI agents a way to talk to each other, to humans, and to VS Code — over messaging platforms people already use.
 
+### Why not just use one AI session?
+
+A single Copilot/Claude/ChatGPT session can only see one project at a time. Real work often spans multiple repos, machines, or locations:
+
+| Scenario | Single Agent | AI COMMS |
+|----------|-------------|----------|
+| Edit API repo + React repo in one task | ❌ Can't hold both contexts | ✅ Each agent owns its repo, coordinated via hub |
+| Dispatch work from your phone at a café | ❌ Must be at your desk | ✅ Send `!team` from WhatsApp, agents execute on your machines |
+| 5 microservices need the same config change | ❌ Open each one manually | ✅ `!agents all update the Redis connection string to...` |
+| Local LLMs on edge devices / IoT | ❌ Not designed for this | ✅ Each device runs an agent, hub coordinates globally |
+| CI broke — you're on the train | ❌ Wait until you're home | ✅ `!copilot check the CI logs and fix the failing test` from Telegram |
+
+The architecture isn't about distributing compute — it's about **context isolation** (each agent knows its own codebase), **remote access** (you don't need to be at your desk), and **coordination** (agents work in parallel on their own repos and combine results).
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                      Agent Hub (Cloud)                      │
@@ -263,13 +277,41 @@ AGENT_HUB_SECRET=your-secret
 
 ### Team Task Decomposition
 
-When you send `!team Build a REST API with tests`, the coordinator:
+The coordinator analyzes your task, matches subtasks to agents by skill, and runs them in parallel.
 
-1. Analyzes the task and breaks it into subtasks
-2. Matches subtasks to agents based on their registered skills
-3. Executes subtasks in parallel where possible
-4. Collects and combines results
-5. Returns the final output
+**Example: Multi-repo feature rollout**
+
+You have 3 VS Code windows open — `api-server`, `web-dashboard`, `mobile-app`. From your phone:
+
+```
+You (WhatsApp): !team add a /health endpoint to the API,
+                show its status on the web dashboard,
+                and display it in the mobile app settings screen
+```
+
+```
+Coordinator decomposes → 3 subtasks:
+  1. Agent "api-server"    → adds GET /health route         (parallel)
+  2. Agent "web-dashboard" → adds status widget to dashboard (parallel)
+  3. Agent "mobile-app"    → adds health check to settings   (parallel)
+
+All 3 run simultaneously in their own VS Code workspaces.
+Combined result returned to your WhatsApp in ~40 seconds.
+```
+
+Each agent edits files *in its actual project* — something a single AI session can't do across repos.
+
+**Example: Remote debugging from your phone**
+
+```
+You (Telegram): !copilot the API tests are failing, check the logs and fix it
+```
+
+Copilot reads test output, finds the bug, edits the file, re-runs tests — all while you're on the train.
+
+**Example: Edge / IoT coordination**
+
+Local LLMs running on Raspberry Pis, NVIDIA Jetsons, or any device with Node.js. Each registers with the hub as an agent. Coordinate sensor data processing, firmware updates, or distributed inference from a single WhatsApp message.
 
 ---
 
