@@ -7,7 +7,14 @@ import config from './config.js';
 
 const BRIDGE_PORT = process.env.COPILOT_BRIDGE_PORT || 3120;
 const BRIDGE_URL = `http://127.0.0.1:${BRIDGE_PORT}`;
+const BRIDGE_TOKEN = process.env.COPILOT_BRIDGE_TOKEN || '';
 const TIMEOUT_MS = 120_000; // 2 minutes — tool-calling can take time
+
+function bridgeHeaders() {
+  const h = { 'Content-Type': 'application/json' };
+  if (BRIDGE_TOKEN) h['Authorization'] = `Bearer ${BRIDGE_TOKEN}`;
+  return h;
+}
 
 /**
  * Check if a message is an explicit Copilot Bridge request.
@@ -69,7 +76,7 @@ export async function handleCopilotBridge(sender, text) {
 
     const res = await fetch(`${BRIDGE_URL}/chat`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: bridgeHeaders(),
       body: JSON.stringify({ message, sender }),
       signal: controller.signal,
     });

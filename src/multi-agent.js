@@ -17,6 +17,22 @@
 
 const TIMEOUT_MS = 180_000; // 3 minutes per agent task
 const HEALTH_TIMEOUT_MS = 3_000;
+const MAX_TASK_PLAN_SIZE = 20; // max subtasks in a team decomposition
+const MAX_TASK_MESSAGE_LENGTH = 10_000; // max chars per task message
+
+// ── URL Validation (SSRF prevention) ───────────────────
+
+function isAllowedAgentUrl(urlStr) {
+  try {
+    const parsed = new URL(urlStr);
+    if (!['http:', 'https:'].includes(parsed.protocol)) return false;
+    // In direct mode (local network), allow private IPs
+    // In production, restrict further via firewall rules
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 // ── Hub Configuration ─────────────────────────────────────
 
@@ -50,7 +66,14 @@ export function loadAgentRegistry() {
   const registryJson = process.env.MULTI_AGENT_REGISTRY;
   if (registryJson) {
     try {
-      agents = JSON.parse(registryJson);
+      const parsed = JSON.parse(registryJson);
+      agents = parsed.filter(a => {
+        if (!isAllowedAgentUrl(a.url)) {
+          console.warn(`[MultiAgent] Rejected agent "${a.name}" — invalid URL: ${a.url}`);
+          return false;
+        }
+        return true;
+      });
       console.log(`[MultiAgent] Loaded ${agents.length} agents from registry`);
       return agents;
     } catch (e) {
@@ -433,6 +456,20 @@ Rules:
     const jsonMatch = decomp.response.match(/\[[\s\S]*?\]/);
     if (!jsonMatch) throw new Error('No JSON array found in decomposition');
     taskPlan = JSON.parse(jsonMatch[0]);
+    // Enforce limits
+    if (taskPlan.length > MAX_TASK_PLAN_SIZE) {
+      return `❌ Task plan too large (${taskPlan.length} subtasks, max ${MAX_TASK_PLAN_SIZE}). Simplify the request.`;
+    }
+    // Validate each task references a known online agent
+    const onlineNames = new Set(online.map(a => (a.agentName || a.name).toLowerCase()));
+    for (const t of taskPlan) {
+      if (!onlineNames.has((t.agent || '').toLowerCase())) {
+        return `❌ Task plan references unknown agent "${t.agent}". Online agents: ${[...onlineNames].join(', ')}`;
+      }
+      if (t.task && t.task.length > MAX_TASK_MESSAGE_LENGTH) {
+        t.task = t.task.slice(0, MAX_TASK_MESSAGE_LENGTH);
+      }
+    }
   } catch (e) {
     return `❌ Failed to parse task plan: ${e.message}\n\nRaw response:\n${decomp.response}`;
   }

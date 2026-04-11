@@ -15,12 +15,21 @@
 
 import { WebSocketServer, WebSocket } from 'ws';
 import { createServer } from 'http';
-import { randomUUID } from 'crypto';
+import { createServer as createHttpsServer } from 'https';
+import { readFileSync } from 'fs';
+import { randomUUID, timingSafeEqual } from 'crypto';
 
 const PORT = parseInt(process.env.PORT || '8090', 10);
 const HUB_SECRET = process.env.HUB_SECRET || '';
 const MAX_AGENTS = parseInt(process.env.HUB_MAX_AGENTS || '50', 10);
 const LOG_LEVEL = process.env.HUB_LOG_LEVEL || 'info';
+const ALLOWED_ORIGINS = process.env.HUB_ALLOWED_ORIGINS || ''; // comma-separated, empty = localhost only
+const TLS_CERT = process.env.TLS_CERT_PATH || '';
+const TLS_KEY = process.env.TLS_KEY_PATH || '';
+const MAX_BODY_SIZE = 1_048_576; // 1 MB
+const MAX_WS_PAYLOAD = 1_048_576; // 1 MB
+const MAX_CONNECTIONS_PER_IP = parseInt(process.env.HUB_MAX_PER_IP || '5', 10);
+const BROADCAST_COOLDOWN_MS = 10_000; // 10 seconds between broadcasts
 
 const LEVELS = { debug: 0, info: 1, warn: 2, error: 3 };
 
@@ -30,6 +39,29 @@ function log(level, ...args) {
     console.log(`[${ts}] [${level.toUpperCase()}]`, ...args);
   }
 }
+
+// ── Security Helpers ──────────────────────────────────────
+
+function safeCompare(a, b) {
+  if (!a || !b) return false;
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  if (bufA.length !== bufB.length) return false;
+  return timingSafeEqual(bufA, bufB);
+}
+
+function isOriginAllowed(origin) {
+  if (!origin) return true; // non-browser requests (curl, agents)
+  if (ALLOWED_ORIGINS) {
+    return ALLOWED_ORIGINS.split(',').map(o => o.trim()).includes(origin);
+  }
+  // Default: only localhost origins
+  return /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+}
+
+/** @type {Map<string, number>} */
+const ipConnections = new Map();
+let lastBroadcastTime = 0;
 
 // ── Agent Registry ────────────────────────────────────────
 
@@ -45,11 +77,17 @@ const REQUEST_TIMEOUT = 180_000; // 3 min per task
 
 // ── HTTP + WebSocket Server ───────────────────────────────
 
-const httpServer = createServer((req, res) => {
+function createRequestHandler(req, res) {
   // REST API for bot-side queries (no WebSocket needed)
   res.setHeader('Content-Type', 'application/json');
-  res.setHeader('Access-Control-Allow-Origin', '*');
+
+  // CORS: restrict to allowed origins
+  const origin = req.headers['origin'] || '';
+  if (isOriginAllowed(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin || 'null');
+  }
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
 
   if (req.method === 'OPTIONS') { res.writeHead(204); res.end(); return; }
 
@@ -57,7 +95,7 @@ const httpServer = createServer((req, res) => {
   if (HUB_SECRET && req.url !== '/health') {
     const auth = req.headers['authorization'] || '';
     const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
-    if (token !== HUB_SECRET) {
+    if (!safeCompare(token, HUB_SECRET)) {
       res.writeHead(401);
       res.end(JSON.stringify({ error: 'Unauthorized' }));
       return;
@@ -75,11 +113,10 @@ const httpServer = createServer((req, res) => {
     return;
   }
 
-  // GET /agents — list connected agents
+  // GET /agents — list connected agents (auth required, sanitized output)
   if (req.method === 'GET' && req.url === '/agents') {
     const list = [...agents.entries()].map(([id, a]) => ({
-      id, name: a.name, workspace: a.workspace, skills: a.skills,
-      connectedAt: a.connectedAt, lastPing: a.lastPing,
+      id, name: a.name, skills: a.skills,
     }));
     res.writeHead(200);
     res.end(JSON.stringify({ agents: list }));
@@ -88,9 +125,7 @@ const httpServer = createServer((req, res) => {
 
   // POST /task — send a task to a specific agent
   if (req.method === 'POST' && req.url === '/task') {
-    let body = '';
-    req.on('data', c => { body += c; });
-    req.on('end', async () => {
+    readBody(req, res, async (body) => {
       try {
         const { agent: agentName, message, sender } = JSON.parse(body);
         if (!agentName || !message) {
@@ -103,17 +138,21 @@ const httpServer = createServer((req, res) => {
         res.end(JSON.stringify(result));
       } catch (err) {
         res.writeHead(500);
-        res.end(JSON.stringify({ error: err.message }));
+        res.end(JSON.stringify({ error: 'Internal server error' }));
       }
     });
     return;
   }
 
-  // POST /broadcast — send to all agents
+  // POST /broadcast — send to all agents (rate limited)
   if (req.method === 'POST' && req.url === '/broadcast') {
-    let body = '';
-    req.on('data', c => { body += c; });
-    req.on('end', async () => {
+    const now = Date.now();
+    if (now - lastBroadcastTime < BROADCAST_COOLDOWN_MS) {
+      res.writeHead(429);
+      res.end(JSON.stringify({ error: 'Broadcast rate limited — wait 10 seconds' }));
+      return;
+    }
+    readBody(req, res, async (body) => {
       try {
         const { message, sender } = JSON.parse(body);
         if (!message) {
@@ -121,12 +160,13 @@ const httpServer = createServer((req, res) => {
           res.end(JSON.stringify({ error: 'Missing message' }));
           return;
         }
+        lastBroadcastTime = Date.now();
         const results = await broadcastTask(message, sender || 'bot');
         res.writeHead(200);
         res.end(JSON.stringify({ results }));
       } catch (err) {
         res.writeHead(500);
-        res.end(JSON.stringify({ error: err.message }));
+        res.end(JSON.stringify({ error: 'Internal server error' }));
       }
     });
     return;
@@ -134,12 +174,55 @@ const httpServer = createServer((req, res) => {
 
   res.writeHead(404);
   res.end(JSON.stringify({ error: 'Not found' }));
-});
+}
 
-const wss = new WebSocketServer({ server: httpServer });
+// Size-limited body reader
+function readBody(req, res, callback) {
+  let body = '';
+  let size = 0;
+  req.on('data', (chunk) => {
+    size += chunk.length;
+    if (size > MAX_BODY_SIZE) {
+      req.destroy();
+      res.writeHead(413);
+      res.end(JSON.stringify({ error: 'Request body too large (max 1MB)' }));
+      return;
+    }
+    body += chunk;
+  });
+  req.on('end', () => callback(body));
+}
+
+// ── Server Creation (HTTP or HTTPS) ───────────────────────
+
+let httpServer;
+if (TLS_CERT && TLS_KEY) {
+  httpServer = createHttpsServer({
+    cert: readFileSync(TLS_CERT),
+    key: readFileSync(TLS_KEY),
+  }, createRequestHandler);
+  log('info', 'TLS enabled');
+} else {
+  httpServer = createServer(createRequestHandler);
+  if (process.env.NODE_ENV === 'production') {
+    log('warn', '⚠️  Running without TLS — set TLS_CERT_PATH and TLS_KEY_PATH for production');
+  }
+}
+
+const wss = new WebSocketServer({ server: httpServer, maxPayload: MAX_WS_PAYLOAD });
 
 wss.on('connection', (ws, req) => {
-  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+  const ip = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
+
+  // Per-IP connection limit
+  const currentCount = ipConnections.get(ip) || 0;
+  if (currentCount >= MAX_CONNECTIONS_PER_IP) {
+    log('warn', `Rejected connection from ${ip} — per-IP limit (${MAX_CONNECTIONS_PER_IP})`);
+    ws.close(4005, 'Too many connections from this IP');
+    return;
+  }
+  ipConnections.set(ip, currentCount + 1);
+
   log('info', `New connection from ${ip}`);
 
   let agentId = null;
@@ -149,6 +232,12 @@ wss.on('connection', (ws, req) => {
   ws.on('pong', () => { ws.isAlive = true; });
 
   ws.on('message', (raw) => {
+    // Payload size enforced by maxPayload on WSS, but double-check
+    if (raw.length > MAX_WS_PAYLOAD) {
+      ws.send(JSON.stringify({ type: 'error', error: 'Payload too large' }));
+      return;
+    }
+
     let msg;
     try {
       msg = JSON.parse(raw.toString());
@@ -165,9 +254,9 @@ wss.on('connection', (ws, req) => {
         return;
       }
 
-      // Verify hub secret
-      if (HUB_SECRET && msg.secret !== HUB_SECRET) {
-        log('warn', `Auth failed from ${ip} — bad secret`);
+      // Verify hub secret (timing-safe)
+      if (HUB_SECRET && !safeCompare(msg.secret || '', HUB_SECRET)) {
+        log('warn', `Auth failed from ${ip}`);
         ws.send(JSON.stringify({ type: 'error', error: 'Invalid hub secret' }));
         ws.close(4003, 'Auth failed');
         return;
@@ -191,7 +280,7 @@ wss.on('connection', (ws, req) => {
       });
 
       authenticated = true;
-      log('info', `Agent registered: ${name} (${agentId}) workspace=${workspace} skills=[${skills.join(',')}]`);
+      log('info', `Agent registered: ${name} (${agentId})`);
 
       ws.send(JSON.stringify({
         type: 'registered',
@@ -264,17 +353,16 @@ wss.on('connection', (ws, req) => {
   });
 
   ws.on('close', () => {
+    // Decrement per-IP counter
+    const count = ipConnections.get(ip) || 1;
+    if (count <= 1) ipConnections.delete(ip);
+    else ipConnections.set(ip, count - 1);
+
     if (agentId && agents.has(agentId)) {
       const agent = agents.get(agentId);
       log('info', `Agent disconnected: ${agent.name} (${agentId})`);
       agents.delete(agentId);
       broadcastEvent('agent-left', { name: agent.name });
-
-      // Fail any pending requests for this agent
-      for (const [reqId, pending] of pendingRequests) {
-        // Can't easily know which pending is for which agent here,
-        // but the timeout will handle it
-      }
     }
   });
 
@@ -358,7 +446,10 @@ function broadcastEvent(event, data, excludeId = null) {
 httpServer.listen(PORT, () => {
   log('info', '═══════════════════════════════════════════');
   log('info', `  Agent Hub running on port ${PORT}`);
-  log('info', `  Auth: ${HUB_SECRET ? 'ENABLED' : 'DISABLED (set HUB_SECRET for production)'}`);
+  log('info', `  TLS: ${TLS_CERT ? 'ENABLED' : 'DISABLED'}`);
+  log('info', `  Auth: ${HUB_SECRET ? 'ENABLED' : 'DISABLED (set HUB_SECRET for production)'}`);  
+  log('info', `  CORS: ${ALLOWED_ORIGINS || 'localhost only'}`);  
+  log('info', `  Per-IP limit: ${MAX_CONNECTIONS_PER_IP}`);
   log('info', `  Max agents: ${MAX_AGENTS}`);
   log('info', `  Endpoints:`);
   log('info', `    GET  /health    — hub status`);

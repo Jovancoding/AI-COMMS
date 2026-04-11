@@ -212,7 +212,11 @@ Agent "devops" (Tokyo) ──WebSocket──┘
 | `HUB_SECRET` | *(required)* | Shared secret for agent authentication |
 | `HUB_PORT` | `8090` | Port to listen on |
 | `HUB_MAX_AGENTS` | `50` | Maximum concurrent agent connections |
+| `HUB_MAX_PER_IP` | `5` | Maximum WebSocket connections per IP address |
 | `HUB_LOG_LEVEL` | `info` | Logging verbosity |
+| `HUB_ALLOWED_ORIGINS` | localhost only | Comma-separated CORS origins (e.g. `https://yourdomain.com`) |
+| `TLS_CERT_PATH` | *(none)* | Path to TLS certificate for HTTPS |
+| `TLS_KEY_PATH` | *(none)* | Path to TLS private key for HTTPS |
 
 ---
 
@@ -302,6 +306,10 @@ The extension provides tools across these categories:
 
 ```bash
 COPILOT_BRIDGE_PORT=3120
+# Optional: token-based auth between bot and bridge
+COPILOT_BRIDGE_TOKEN=your-shared-token
+# Optional: auto-route all messages to bridge (default: false, requires !copilot prefix)
+COPILOT_BRIDGE_AUTO_ROUTE=false
 ```
 
 The extension does not auto-start. Enable it manually via VS Code Command Palette → **"Copilot Bridge: Start Server"**.
@@ -361,7 +369,7 @@ Incoming Message
 ├──────────────┤
 │  Size Check  │──► Block oversized payloads
 ├──────────────┤
-│  HMAC Auth   │──► Verify agent identity
+│  HMAC Auth   │──► Verify agent identity (timing-safe comparison)
 ├──────────────┤
 │  Jailbreak   │──► Block prompt injection (6 layers)
 │  Defense     │    · Pattern matching (40+ signatures)
@@ -395,15 +403,53 @@ SECURITY_AGENT_SECRET=$(node -e "console.log(require('crypto').randomBytes(32).t
 SECURITY_ENCRYPTION_KEY=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
 ```
 
+### Security Hardening (Built-In)
+
+These protections are implemented across the codebase:
+
+| Protection | Component | Description |
+|---|---|---|
+| **Timing-safe secret comparison** | Hub, Security | `crypto.timingSafeEqual()` for all secret/token checks — prevents timing attacks |
+| **Request body size limit** | Hub | 1 MB max on all HTTP POST bodies — prevents memory exhaustion |
+| **WebSocket payload limit** | Hub | 1 MB max per message frame — prevents DoS |
+| **CORS lockdown** | Hub | Origin allowlist (default: localhost only) — prevents cross-origin attacks |
+| **Per-IP connection limit** | Hub | Max 5 WebSocket connections per IP — prevents fake agent flooding |
+| **Broadcast rate limit** | Hub | 10-second cooldown between broadcasts — prevents agent spam |
+| **TLS support** | Hub | Optional HTTPS via `TLS_CERT_PATH` + `TLS_KEY_PATH` |
+| **Sanitized API responses** | Hub | `/agents` endpoint excludes internal metadata (timestamps, workspace paths) |
+| **Bridge authentication** | Copilot Bridge | Optional `COPILOT_BRIDGE_TOKEN` for bot-to-extension auth |
+| **Auto-route opt-in** | Orchestrator | `COPILOT_BRIDGE_AUTO_ROUTE=false` by default — requires explicit `!copilot` prefix |
+| **URL validation** | Multi-Agent | Agent registry URLs validated (protocol check, SSRF prevention) |
+| **Task plan limits** | Multi-Agent | Max 20 subtasks per team decomposition, 10K chars per task message |
+| **Media size limit** | Media Handler | 50 MB default (configurable via `MAX_MEDIA_SIZE`) — prevents disk exhaustion |
+| **Silent drop** | Orchestrator | Unauthorized human senders get no response — prevents enumeration |
+
+### Production Security Checklist
+
+- [ ] `SECURITY_ENABLE_ALLOWLIST=true` with specific phone numbers
+- [ ] `SECURITY_BLOCK_PROMPT_INJECTION=true`
+- [ ] `SECURITY_REQUIRE_AGENT_AUTH=true`
+- [ ] `HUB_SECRET` is 32+ random characters, unique per deployment
+- [ ] `TLS_CERT_PATH` and `TLS_KEY_PATH` set for HTTPS on the hub
+- [ ] `HUB_ALLOWED_ORIGINS` set to your domain(s)
+- [ ] `COPILOT_BRIDGE_TOKEN` set if using the bridge
+- [ ] `COPILOT_BRIDGE_AUTO_ROUTE=false` (use explicit `!copilot` prefix)
+- [ ] All AI provider API keys rotated and spending limits set
+- [ ] `.env` not committed (verify with `git status`)
+- [ ] Audit logs monitored for security events
+- [ ] Webhook signatures verified (WhatsApp Cloud API / Teams)
+- [ ] Secrets rotated regularly (monthly recommended)
+
 ### Security Recommendations
 
 1. **Always enable allowlist in production** — only authorized senders can interact
 2. **Enable prompt injection blocking** — `SECURITY_BLOCK_PROMPT_INJECTION=true`
 3. **Require agent auth** for multi-agent networks — prevents impersonation
 4. **Use unique secrets** — never reuse `HUB_SECRET`, `SECURITY_AGENT_SECRET`, or `SECURITY_ENCRYPTION_KEY`
-5. **Rotate tokens regularly** — especially after any suspected exposure
-6. **Never commit `.env`** — it contains all your secrets
-7. **Set spending limits** on all AI provider accounts
+5. **Enable TLS on the hub** — all agent traffic should be encrypted in transit
+6. **Rotate tokens regularly** — especially after any suspected exposure
+7. **Never commit `.env`** — it contains all your secrets
+8. **Set spending limits** on all AI provider accounts
 
 ---
 

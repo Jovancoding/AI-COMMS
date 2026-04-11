@@ -9,6 +9,7 @@ import path from 'path';
 import { auditLog } from './audit-log.js';
 
 const MEDIA_DIR = path.resolve('data', 'media');
+const MAX_MEDIA_SIZE = parseInt(process.env.MAX_MEDIA_SIZE || String(50 * 1024 * 1024), 10); // 50 MB default
 
 // Ensure media directory exists
 if (!fs.existsSync(MEDIA_DIR)) {
@@ -23,6 +24,11 @@ export async function downloadBaileysMedia(sock, msg) {
     const { downloadMediaMessage } = await import('@whiskeysockets/baileys');
     const buffer = await downloadMediaMessage(msg, 'buffer', {});
     if (!buffer) return null;
+
+    if (buffer.length > MAX_MEDIA_SIZE) {
+      auditLog('WARN', 'media-too-large', { size: buffer.length, maxSize: MAX_MEDIA_SIZE });
+      return null;
+    }
 
     const mediaType = detectMediaType(msg);
     const ext = extensionFor(mediaType);

@@ -116,8 +116,8 @@ export async function handleMessage(sender, text, whatsappClient, isGroup = fals
       return;
     }
 
-    // Auto-route to Copilot Bridge when available (no prefix needed)
-    if (await isBridgeAvailable()) {
+    // Auto-route to Copilot Bridge when available and enabled (opt-in via env)
+    if (process.env.COPILOT_BRIDGE_AUTO_ROUTE === 'true' && await isBridgeAvailable()) {
       auditLog('INFO', 'copilot-bridge-auto', { sender, length: text.length });
       const result = await handleCopilotBridge(sender, text);
       await whatsappClient.sendMessage(sender, result);
