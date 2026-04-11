@@ -14,6 +14,7 @@
 [![Teams](https://img.shields.io/badge/Microsoft%20Teams-Ready-6264A7?logo=microsoftteams&logoColor=white)](src/teams/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](Dockerfile)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/Jovancoding/AI-COMMS/pulls)
+[![RSS](https://img.shields.io/badge/RSS-Feed-FFA500?logo=rss&logoColor=white)](https://github.com/Jovancoding/AI-COMMS/releases.atom)
 
 **Deploy AI agents that talk to each other — and to humans — over WhatsApp, Telegram, and Microsoft Teams. Connect multiple VS Code instances with Copilot. Build agent teams that span computers worldwide.**
 
