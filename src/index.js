@@ -127,24 +127,28 @@ async function main() {
   registerSelf();
 
   const platform = config.platform.toLowerCase();
+  const platforms = platform === 'both'
+    ? ['whatsapp', 'teams', 'telegram']
+    : platform.split(',').map(p => p.trim());
 
-  if (platform === 'whatsapp' || platform === 'both') {
+  if (platforms.includes('whatsapp')) {
     const client = await startWhatsApp();
     activeClients.push(client);
   }
 
-  if (platform === 'teams' || platform === 'both') {
+  if (platforms.includes('teams')) {
     const client = await startTeams();
     activeClients.push(client);
   }
 
-  if (platform === 'telegram' || platform === 'both') {
+  if (platforms.includes('telegram')) {
     const client = await startTelegram();
     activeClients.push(client);
   }
 
-  if (!['whatsapp', 'teams', 'telegram', 'both'].includes(platform)) {
-    console.error(`Unknown platform "${platform}". Use: whatsapp | teams | telegram | both`);
+  const valid = ['whatsapp', 'teams', 'telegram'];
+  if (!platforms.some(p => valid.includes(p))) {
+    console.error(`Unknown platform "${platform}". Use: whatsapp | teams | telegram | both | whatsapp,telegram`);
     process.exit(1);
   }
 }

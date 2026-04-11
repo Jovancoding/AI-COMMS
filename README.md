@@ -1,5 +1,547 @@
 <div align="center">
 
+# AI COMMS
+
+### Multi-Agent Communication Network
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![npm](https://img.shields.io/npm/v/ai-comms?logo=npm&color=CB3837)](https://www.npmjs.com/package/ai-comms)
+[![npm downloads](https://img.shields.io/npm/dw/ai-comms?logo=npm&color=CB3837)](https://www.npmjs.com/package/ai-comms)
+[![Node.js](https://img.shields.io/badge/Node.js-%3E%3D20.0.0-green?logo=nodedotjs)](https://nodejs.org/)
+[![Providers](https://img.shields.io/badge/AI%20Providers-18-blue?logo=openai)](src/providers/)
+[![WhatsApp](https://img.shields.io/badge/WhatsApp-Ready-25D366?logo=whatsapp&logoColor=white)](src/whatsapp/)
+[![Telegram](https://img.shields.io/badge/Telegram-Ready-26A5E4?logo=telegram&logoColor=white)](src/telegram/)
+[![Teams](https://img.shields.io/badge/Microsoft%20Teams-Ready-6264A7?logo=microsoftteams&logoColor=white)](src/teams/)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](Dockerfile)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/Jovancoding/AI-COMMS/pulls)
+
+**Deploy AI agents that talk to each other — and to humans — over WhatsApp, Telegram, and Microsoft Teams. Connect multiple VS Code instances with Copilot. Build agent teams that span computers worldwide.**
+
+[Quick Start](#-quick-start) · [Architecture](#-architecture) · [Agent Hub](#-agent-hub) · [Multi-Agent](#-multi-agent-teams) · [Copilot Bridge](#-copilot-bridge) · [Security](#-security) · [Docs](#-documentation)
+
+</div>
+
+---
+
+> **Disclaimer:** This software is provided "as is", without warranty of any kind, express or implied. Use at your own risk. You are solely responsible for compliance with the terms of service of any third-party platforms (WhatsApp, Telegram, Microsoft Teams, AI providers) and all applicable laws in your jurisdiction. The authors are not liable for any damages, data loss, account suspension, or costs arising from the use of this software. See [LICENSE](LICENSE) for full terms.
+
+---
+
+## What is AI COMMS?
+
+AI COMMS is an agent communication network. It gives AI agents a way to talk to each other, to humans, and to VS Code — over messaging platforms people already use.
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      Agent Hub (Cloud)                      │
+│             WebSocket relay · Agent registry                │
+│             Task routing · Authentication                   │
+└─────────┬───────────────┬──────────────────┬────────────────┘
+          │               │                  │
+   ┌──────┴──────┐ ┌──────┴──────┐  ┌───────┴──────┐
+   │ Computer A  │ │ Computer B  │  │ Computer C   │
+   │ VS Code x2  │ │ VS Code x1  │  │ VS Code x3   │
+   │ Agent: back │ │ Agent: front│  │ Agent: devops│
+   │ Agent: test │ │             │  │ Agent: data  │
+   │ Copilot     │ │ Copilot     │  │ Agent: ml    │
+   └──────┬──────┘ └──────┴──────┘  └───────┬──────┘
+          │               │                  │
+          └───────────────┼──────────────────┘
+                          │
+                  ┌───────┴───────┐
+                  │  Messaging    │
+                  │  WhatsApp     │
+                  │  Telegram     │
+                  │  Teams        │
+                  └───────────────┘
+                          │
+                      Humans
+```
+
+- **Agents** are AI models running inside VS Code with GitHub Copilot
+- **The Hub** connects agents across machines via WebSocket
+- **Messaging platforms** let humans send tasks and receive results
+- **The orchestrator** routes messages between all of them
+
+---
+
+## Features
+
+| Feature | Description |
+|---------|-------------|
+| **18 AI Providers** | OpenAI, Anthropic, Google, Mistral, Groq, DeepSeek, xAI, Perplexity, Together, Fireworks, NVIDIA NIM, Ollama, Codex, Copilot, and more |
+| **WhatsApp + Telegram + Teams** | Connect to any combination of platforms simultaneously |
+| **Agent Hub** | WebSocket relay server — agents anywhere in the world connect and collaborate |
+| **Multi-Agent Teams** | Multiple VS Code instances work together: parallel tasks, team decomposition, broadcast |
+| **Copilot Bridge** | VS Code extension that gives Copilot real tools — file ops, terminal, browser, screen control |
+| **Agent Protocol** | Structured JSON messaging between agents with HMAC signatures |
+| **E2E Encryption** | AES-256-GCM encrypted payloads between agents |
+| **Jailbreak Defense** | 6-layer prompt injection protection |
+| **Auto Failover** | Provider goes down? Fallback chain activates automatically |
+| **Health Monitoring** | HTTP endpoints for load balancers and Docker |
+| **Audit Logging** | Every security event logged to disk with rotation |
+| **Docker Ready** | Single command deployment |
+
+---
+
+## Quick Start
+
+```bash
+git clone https://github.com/Jovancoding/AI-COMMS.git
+cd AI-COMMS
+npm install
+cp .env.example .env
+```
+
+Edit `.env` — set your AI provider and at least one messaging platform:
+
+```bash
+AI_PROVIDER=openai
+OPENAI_API_KEY=sk-...
+PLATFORM=telegram
+TELEGRAM_BOT_TOKEN=your-bot-token
+```
+
+Start:
+
+```bash
+npm start
+```
+
+For WhatsApp (Baileys mode), scan the QR code in your terminal. For Telegram, the bot connects automatically via long-polling.
+
+> **Token Safety:** Never commit your `.env` file. It contains API keys and tokens. The `.gitignore` already excludes it, but always verify before pushing. Rotate any tokens that may have been exposed. Set spending limits on all AI provider accounts.
+
+---
+
+## Architecture
+
+```
+src/
+├── index.js              # Entry — multi-platform startup, graceful shutdown
+├── orchestrator.js       # Message routing: security → copilot bridge → AI → response
+├── config.js             # All environment variable mappings
+├── multi-agent.js        # Multi-agent coordinator — discovery, routing, teams
+├── copilot-bridge.js     # Copilot Bridge client — sends tasks to VS Code extension
+├── protocol.js           # Agent-to-agent JSON protocol + HMAC signing
+├── groups.js             # Multi-agent group management
+├── storage.js            # JSON persistence with atomic writes
+├── security.js           # Allowlist, rate limiting, HMAC verification
+├── jailbreak-defense.js  # 6-layer prompt injection defense
+├── encryption.js         # AES-256-GCM payload encryption
+├── failover.js           # Provider failover chain
+├── remote-agent.js       # Execute tasks via messaging (!do, !task)
+├── health.js             # HTTP /health + /ready endpoints
+├── discovery.js          # Agent registry + announcements
+├── admin.js              # Admin commands (!status, !logs, !security)
+├── media.js              # Image/audio/video/document handler
+├── audit-log.js          # Persistent event logging with rotation
+├── safe-fetch.js         # Fetch wrapper with timeouts
+├── startup-checks.js     # Boot-time security validation
+├── test-suite.js         # Automated test suite
+├── whatsapp/
+│   ├── baileys-client.js    # WhatsApp via QR scan (free, local)
+│   └── cloud-api-client.js  # WhatsApp via Meta Cloud API (official)
+├── telegram/
+│   └── telegram-client.js   # Telegram Bot API (polling + webhook)
+├── teams/
+│   └── teams-client.js      # Microsoft Teams Bot Framework
+└── providers/               # 18 AI provider adapters
+
+hub/
+└── server.js             # WebSocket Agent Hub — global relay server
+```
+
+---
+
+## Agent Hub
+
+The Agent Hub is a lightweight WebSocket relay server that connects agents across machines, networks, and continents. Any agent running the Copilot Bridge extension can register with the hub and become available to the entire network.
+
+### Start the Hub
+
+```bash
+# Set a shared secret (required)
+export HUB_SECRET=your-secret-here
+
+# Start the hub
+npm run hub
+```
+
+The hub runs on port 8090 by default.
+
+### Hub REST API
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/health` | GET | Hub status, connected agent count |
+| `/agents` | GET | List all registered agents and their skills |
+| `/task` | POST | Route a task to a specific agent by name |
+| `/broadcast` | POST | Send a task to all connected agents |
+
+### Connecting Agents
+
+On each machine running a VS Code agent, set these in `.env`:
+
+```bash
+AGENT_HUB_URL=http://your-hub-server:8090
+AGENT_HUB_SECRET=your-secret-here
+```
+
+The Copilot Bridge extension auto-connects to the hub on startup and registers with its name and skills.
+
+### How It Works
+
+```
+Agent "backend" (NYC)  ──WebSocket──┐
+                                     │
+Agent "frontend" (London) ──WS───── Hub (Cloud VPS) ──── Bot (WhatsApp/Telegram)
+                                     │
+Agent "devops" (Tokyo) ──WebSocket──┘
+```
+
+- Agents maintain persistent WebSocket connections with heartbeat (30s interval)
+- Dead agents auto-cleaned after 90s timeout
+- Tasks routed by agent name or broadcast to all
+- All traffic authenticated with `HUB_SECRET`
+
+### Hub Configuration
+
+| Variable | Default | Description |
+|---|---|---|
+| `HUB_SECRET` | *(required)* | Shared secret for agent authentication |
+| `HUB_PORT` | `8090` | Port to listen on |
+| `HUB_MAX_AGENTS` | `50` | Maximum concurrent agent connections |
+| `HUB_LOG_LEVEL` | `info` | Logging verbosity |
+
+---
+
+## Multi-Agent Teams
+
+Run multiple VS Code instances on one computer — or across many — and have them collaborate as a team.
+
+### Setup Options
+
+**Option A — Local ports (simplest)**
+
+```bash
+MULTI_AGENT_PORTS=3120,3121,3122
+```
+
+Each port is a VS Code instance with the Copilot Bridge extension.
+
+**Option B — Named registry with skills**
+
+```bash
+MULTI_AGENT_REGISTRY=[
+  {"name":"backend","url":"http://127.0.0.1:3120","skills":["api","backend"]},
+  {"name":"frontend","url":"http://127.0.0.1:3121","skills":["ui","css"]},
+  {"name":"testing","url":"http://127.0.0.1:3122","skills":["qa","tests"]}
+]
+```
+
+**Option C — Via Agent Hub (global)**
+
+```bash
+AGENT_HUB_URL=http://your-hub:8090
+AGENT_HUB_SECRET=your-secret
+```
+
+### Commands (from WhatsApp/Telegram)
+
+| Command | Description |
+|---------|-------------|
+| `!agents status` | List all agents with health status |
+| `!agents list` | Show agent names and skills |
+| `!agents send <name> <task>` | Send a task to a specific agent |
+| `!agents all <task>` | Broadcast a task to all agents |
+| `!team <complex task>` | Auto-decompose and distribute task to best agents |
+
+### Team Task Decomposition
+
+When you send `!team Build a REST API with tests`, the coordinator:
+
+1. Analyzes the task and breaks it into subtasks
+2. Matches subtasks to agents based on their registered skills
+3. Executes subtasks in parallel where possible
+4. Collects and combines results
+5. Returns the final output
+
+---
+
+## Copilot Bridge
+
+The Copilot Bridge is a VS Code extension that turns GitHub Copilot into an agent with real capabilities. It exposes Copilot through an HTTP server with tools for file operations, terminal commands, browser control, and more.
+
+### How It Works
+
+```
+WhatsApp/Telegram ──► Bot (Node.js) ──► Copilot Bridge (VS Code, localhost:3120)
+                                              │
+                                        GitHub Copilot
+                                        (AI model + tools)
+```
+
+1. A message arrives on WhatsApp or Telegram
+2. The orchestrator forwards it to the Copilot Bridge HTTP endpoint
+3. The extension sends the message to GitHub Copilot with tool definitions
+4. Copilot processes the request, calling tools as needed (file read/write, terminal, browser, etc.)
+5. The response flows back through the messaging platform
+
+### What Copilot Can Do via the Bridge
+
+The extension provides tools across these categories:
+
+- **Code**: Read, write, search files; run terminal commands; manage VS Code workspace
+- **Browser**: Navigate Chrome, execute JavaScript in pages, read tab content via Chrome DevTools Protocol
+- **Screen**: Capture screen, OCR text recognition, mouse/keyboard control, UI Automation
+- **System**: Process manager, services, registry, network diagnostics, disk info
+- **Apps**: Launch and control any Windows application, read app content via UI Automation
+
+### Configuration
+
+```bash
+COPILOT_BRIDGE_PORT=3120
+```
+
+The extension does not auto-start. Enable it manually via VS Code Command Palette → **"Copilot Bridge: Start Server"**.
+
+---
+
+## 18 AI Providers
+
+Switch providers with a single environment variable. Every provider has fetch timeouts, error handling, and automatic failover.
+
+| Provider | Model | Env Key |
+|----------|-------|---------|
+| **OpenAI** | GPT-4o | `OPENAI_API_KEY` |
+| **Anthropic** | Claude Sonnet 4 | `ANTHROPIC_API_KEY` |
+| **Google** | Gemini 2.0 Flash | `GOOGLE_API_KEY` |
+| **Mistral** | Mistral Large | `MISTRAL_API_KEY` |
+| **Cohere** | Command R+ | `COHERE_API_KEY` |
+| **Groq** | LLaMA 3.3 70B | `GROQ_API_KEY` |
+| **DeepSeek** | DeepSeek Chat | `DEEPSEEK_API_KEY` |
+| **xAI** | Grok 2 | `XAI_API_KEY` |
+| **Perplexity** | Sonar Pro | `PERPLEXITY_API_KEY` |
+| **Together AI** | LLaMA 3 70B | `TOGETHER_API_KEY` |
+| **Fireworks** | LLaMA 3.1 70B | `FIREWORKS_API_KEY` |
+| **NVIDIA NIM** | Nemotron 3 Super | `NVIDIA_API_KEY` |
+| **Ollama** | LLaMA 3 (local) | `OLLAMA_BASE_URL` |
+| **Codex** | o4-mini | `CODEX_API_KEY` |
+| **GitHub Copilot** | GPT-4o via GitHub | `COPILOT_TOKEN` |
+| **Claude Code** | Claude + thinking | `CLAUDE_CODE_API_KEY` |
+| **Claude Cowork** | Claude + collab | `CLAUDE_COWORK_API_KEY` |
+| **OpenClaw** | Any (self-hosted) | `OPENCLAW_BASE_URL` |
+
+### Failover
+
+```bash
+AI_PROVIDER=openai
+AI_FALLBACK_PROVIDERS=anthropic,google,groq
+```
+
+If OpenAI fails → tries Anthropic → tries Google → tries Groq. Automatic.
+
+> **Cost Warning:** AI provider API calls consume tokens and may incur costs. Monitor your provider dashboards. Some providers offer free-tier models (e.g., GitHub Copilot with GPT-4o mini). Always set spending limits on your accounts.
+
+---
+
+## Security
+
+AI COMMS was designed with security as a first-class concern.
+
+```
+Incoming Message
+       │
+       ▼
+┌──────────────┐
+│  Allowlist   │──► Block unknown senders (silent drop)
+├──────────────┤
+│  Rate Limit  │──► Block message flooding
+├──────────────┤
+│  Size Check  │──► Block oversized payloads
+├──────────────┤
+│  HMAC Auth   │──► Verify agent identity
+├──────────────┤
+│  Jailbreak   │──► Block prompt injection (6 layers)
+│  Defense     │    · Pattern matching (40+ signatures)
+│              │    · Encoding detection (base64, hex, reversed)
+│              │    · Persona hijack blocking
+│              │    · System prompt extraction prevention
+│              │    · Multi-turn escalation tracking
+│              │    · Output validation
+├──────────────┤
+│  Encryption  │──► AES-256-GCM + HMAC-SHA256
+├──────────────┤
+│  Audit Log   │──► All events logged to disk
+└──────────────┘
+```
+
+### Quick Security Setup
+
+```bash
+# Restrict who can message the bot
+SECURITY_ENABLE_ALLOWLIST=true
+SECURITY_ALLOWLIST=+1234567890,+0987654321
+
+# Block prompt injection attacks
+SECURITY_BLOCK_PROMPT_INJECTION=true
+
+# Require agent authentication
+SECURITY_REQUIRE_AGENT_AUTH=true
+
+# Generate secrets
+SECURITY_AGENT_SECRET=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
+SECURITY_ENCRYPTION_KEY=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
+```
+
+### Security Recommendations
+
+1. **Always enable allowlist in production** — only authorized senders can interact
+2. **Enable prompt injection blocking** — `SECURITY_BLOCK_PROMPT_INJECTION=true`
+3. **Require agent auth** for multi-agent networks — prevents impersonation
+4. **Use unique secrets** — never reuse `HUB_SECRET`, `SECURITY_AGENT_SECRET`, or `SECURITY_ENCRYPTION_KEY`
+5. **Rotate tokens regularly** — especially after any suspected exposure
+6. **Never commit `.env`** — it contains all your secrets
+7. **Set spending limits** on all AI provider accounts
+
+---
+
+## Agent Protocol
+
+Agents communicate using a structured JSON envelope:
+
+```json
+{
+  "protocol": "ai-comms",
+  "version": "1.0",
+  "from": { "agentId": "agent_001", "agentName": "Atlas" },
+  "to": { "agentId": "agent_002", "agentName": "Nova" },
+  "intent": "chat",
+  "payload": "What is the deployment status?",
+  "conversationId": "conv_abc123",
+  "timestamp": "2026-04-11T12:00:00.000Z"
+}
+```
+
+Messages are signed with HMAC-SHA256 and optionally encrypted with AES-256-GCM. Replay attacks are blocked by timestamp validation.
+
+---
+
+## Admin Commands
+
+Control your agent from WhatsApp or Telegram:
+
+| Command | Description |
+|---------|-------------|
+| `!status` | Agent status, uptime, memory |
+| `!groups` | List multi-agent groups |
+| `!agents status` | Show all network agents |
+| `!agents send <name> <task>` | Route task to specific agent |
+| `!team <task>` | Distribute across team |
+| `!logs 20` | Recent audit log entries |
+| `!provider` | Current AI provider and model |
+| `!security` | Security configuration |
+| `!help` | All commands |
+
+---
+
+## Deployment
+
+### Docker (recommended)
+
+```bash
+docker compose up -d
+```
+
+### PM2
+
+```bash
+npm install -g pm2
+pm2 start ecosystem.config.cjs
+pm2 save
+```
+
+### Manual
+
+```bash
+NODE_ENV=production node src/index.js
+```
+
+### Hub Server
+
+```bash
+HUB_SECRET=your-secret npm run hub
+```
+
+### Health Check
+
+```bash
+curl http://localhost:9090/health
+```
+
+---
+
+## Tests
+
+```bash
+npm test
+```
+
+Covers config loading, protocol building, encryption roundtrips, jailbreak defense, groups, storage, failover, rate limiting, and more.
+
+---
+
+## Documentation
+
+| Guide | Description |
+|-------|-------------|
+| [Setup Guide](docs/SETUP.md) | Step-by-step for WhatsApp, Telegram, Teams, Docker, PM2 |
+| [Providers Guide](docs/PROVIDERS.md) | Configure each of the 18 AI providers |
+| [Security Guide](docs/SECURITY.md) | Allowlists, encryption, jailbreak defense, audit logging |
+| [Multi-Agent Guide](docs/MULTI-AGENT.md) | Agent teams, hub setup, task routing |
+
+---
+
+## Environment Variables
+
+See [.env.example](.env.example) for the complete list with descriptions and defaults.
+
+---
+
+## Contributing
+
+Contributions are welcome. Open an issue or PR for:
+
+- New AI provider adapters
+- New messaging platform integrations
+- Security improvements
+- Bug fixes
+
+```bash
+git clone https://github.com/Jovancoding/AI-COMMS.git
+cd AI-COMMS
+npm install
+npm test
+```
+
+---
+
+## License
+
+[MIT](LICENSE)
+
+---
+
+<div align="center">
+
+**This software is provided as-is. Use at your own risk.**
+
+**Always protect your API keys, tokens, and secrets. Never commit credentials to version control.**
+
+</div>
+<div align="center">
+
 # 🤖 AI COMMS
 
 ### The open-source protocol for AI-to-AI communication

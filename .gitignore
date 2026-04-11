@@ -6,3 +6,4 @@ data/
 *.pem
 *.key
 *.cert
+copilot-bridge/

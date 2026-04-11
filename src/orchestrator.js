@@ -23,6 +23,8 @@ import { handleAnnouncement, markAgentSeen } from './discovery.js';
 import { handleAdminCommand } from './admin.js';
 import { recordIncoming, recordOutgoing, recordError } from './health.js';
 import { isRemoteTask, handleRemoteTask } from './remote-agent.js';
+import { isCopilotRequest, handleCopilotBridge, isBridgeAvailable } from './copilot-bridge.js';
+import { isMultiAgentCommand, handleMultiAgentCommand } from './multi-agent.js';
 
 const BASE_PROMPT = `You are ${config.agent.name}, a personal AI assistant connected to WhatsApp.
 You can communicate with both humans and other AI agents.
@@ -81,6 +83,24 @@ export async function handleMessage(sender, text, whatsappClient, isGroup = fals
 
   // --- Admin commands (bypass normal flow) ---
   if (!isGroup && incoming.type !== 'agent') {
+    // Copilot Bridge: explicit !copilot / !cp prefix always goes to bridge
+    if (isCopilotRequest(text)) {
+      auditLog('INFO', 'copilot-bridge-request', { sender, length: text.length, explicit: true });
+      const result = await handleCopilotBridge(sender, text);
+      await whatsappClient.sendMessage(sender, result);
+      recordOutgoing();
+      return;
+    }
+
+    // Multi-agent commands: !agents, !team, !multi
+    if (isMultiAgentCommand(text)) {
+      auditLog('INFO', 'multi-agent-command', { sender, length: text.length });
+      const result = await handleMultiAgentCommand(sender, text);
+      await whatsappClient.sendMessage(sender, result);
+      recordOutgoing();
+      return;
+    }
+
     // Remote agent tasks: !do or !task
     if (isRemoteTask(text)) {
       const result = await handleRemoteTask(sender, text, whatsappClient);
@@ -92,6 +112,15 @@ export async function handleMessage(sender, text, whatsappClient, isGroup = fals
     const adminResult = await handleAdminCommand(sender, text);
     if (adminResult) {
       await whatsappClient.sendMessage(sender, adminResult);
+      recordOutgoing();
+      return;
+    }
+
+    // Auto-route to Copilot Bridge when available (no prefix needed)
+    if (await isBridgeAvailable()) {
+      auditLog('INFO', 'copilot-bridge-auto', { sender, length: text.length });
+      const result = await handleCopilotBridge(sender, text);
+      await whatsappClient.sendMessage(sender, result);
       recordOutgoing();
       return;
     }
@@ -109,8 +138,7 @@ export async function handleMessage(sender, text, whatsappClient, isGroup = fals
     const gate = securityGate(sender, text);
     if (!gate.allowed) {
       console.warn(`[Security] Blocked message from ${sender}: ${gate.reason}`);
-      await whatsappClient.sendMessage(sender, gate.reason);
-      return;
+      return; // silently drop — don't reply to unauthorized senders
     }
   }
 

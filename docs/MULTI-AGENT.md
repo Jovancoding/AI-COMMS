@@ -351,6 +351,98 @@ Human sees the collaborative response on WhatsApp
 
 ---
 
+## Agent Hub (WebSocket Relay)
+
+For production networks where agents run on different machines, use the **Agent Hub** — a WebSocket relay server that handles agent registration, discovery, task routing, and heartbeat monitoring.
+
+### Why use the Hub?
+
+- **No port forwarding** — agents connect outbound to the hub
+- **Dynamic discovery** — agents register on connect, no manual registry needed
+- **Heartbeat monitoring** — dead agents are automatically removed (90s timeout)
+- **REST API** — query agents, send tasks, and broadcast from your bot without WebSocket code
+
+### Starting the Hub
+
+```bash
+# Local development
+npm run hub
+
+# Production
+HUB_SECRET=your-shared-secret PORT=8090 node hub/server.js
+```
+
+### Hub Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PORT` | `8090` | Listen port |
+| `HUB_SECRET` | (none) | Shared secret for agent auth (required in production) |
+| `HUB_MAX_AGENTS` | `50` | Max concurrent agent connections |
+| `HUB_LOG_LEVEL` | `info` | `debug`, `info`, `warn`, or `error` |
+
+### Hub REST API
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `GET` | `/health` | No | Hub status + agent count |
+| `GET` | `/agents` | Yes | List all connected agents |
+| `POST` | `/task` | Yes | Send a task to a named agent |
+| `POST` | `/broadcast` | Yes | Send a task to all agents |
+
+Authentication: `Authorization: Bearer <HUB_SECRET>`
+
+#### Send a task
+
+```bash
+curl -X POST http://hub.yoursite.com:8090/task \
+  -H "Authorization: Bearer your-secret" \
+  -H "Content-Type: application/json" \
+  -d '{"agent": "network-ai", "message": "list running processes", "sender": "admin"}'
+```
+
+#### Broadcast
+
+```bash
+curl -X POST http://hub.yoursite.com:8090/broadcast \
+  -H "Authorization: Bearer your-secret" \
+  -H "Content-Type: application/json" \
+  -d '{"message": "status check", "sender": "admin"}'
+```
+
+### Hub Mode in the Bot
+
+Connect your bot to the hub instead of direct HTTP:
+
+```bash
+# .env
+AGENT_HUB_URL=http://hub.yoursite.com:8090
+AGENT_HUB_SECRET=your-shared-secret
+```
+
+When `AGENT_HUB_URL` is set, the multi-agent coordinator automatically:
+- Discovers agents via the hub REST API (no manual registry needed)
+- Routes `!team` tasks through the hub
+- Shows hub status in `!agents` output
+
+### Agent WebSocket Protocol
+
+Agents connect to the hub via WebSocket and register:
+
+```json
+{
+  "type": "register",
+  "name": "network-ai",
+  "workspace": "ai-comms",
+  "skills": ["networking", "automation"],
+  "secret": "your-shared-secret"
+}
+```
+
+The hub assigns a UUID and broadcasts `agent-joined` events to all other agents. Tasks are routed by agent name, and responses flow back through the hub.
+
+---
+
 ## Conversation Cleanup
 
 Agent conversations are automatically purged after 24 hours of inactivity to prevent unbounded memory growth. This applies to both human and agent conversations.
