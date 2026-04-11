@@ -197,6 +197,13 @@ test('recordGroupMessage and getGroupContext', () => {
 // --- 4. Security ---
 console.log('\n[Security]');
 const security = await import('./security.js');
+const secConfig = (await import('./config.js')).default;
+
+// Save original security config and override for tests
+const origSec = { ...secConfig.security };
+secConfig.security.enableAllowlist = false;
+secConfig.security.allowlist = [];
+secConfig.security.blocklist = [];
 
 test('isAllowed passes when allowlist disabled', () => {
   assert(security.isAllowed('+9999999@s.whatsapp.net'), 'should allow');
@@ -240,6 +247,9 @@ test('securityGate blocks oversized input', () => {
   assert(result.allowed === false, 'should block');
   assert(result.reason.includes('too long'), 'should mention size');
 });
+
+// Restore original security config
+Object.assign(secConfig.security, origSec);
 
 // --- 5. Encryption ---
 console.log('\n[Encryption]');
@@ -587,7 +597,10 @@ console.log('\n[Remote Agent]');
 const remoteAgent = await import('./remote-agent.js');
 
 test('isRemoteTask detects !do command', () => {
+  const origEnabled = secConfig.remoteAgent.enabled;
+  secConfig.remoteAgent.enabled = false;
   assert(remoteAgent.isRemoteTask('!do create a hello.txt file') === false, 'should be false when disabled');
+  secConfig.remoteAgent.enabled = origEnabled;
 });
 
 test('isRemoteTask rejects normal messages', () => {
