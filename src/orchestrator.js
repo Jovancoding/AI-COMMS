@@ -24,6 +24,9 @@ import { handleAdminCommand } from './admin.js';
 import { recordIncoming, recordOutgoing, recordError } from './health.js';
 import { isRemoteTask, handleRemoteTask } from './remote-agent.js';
 import { isCopilotRequest, handleCopilotBridge, isBridgeAvailable } from './copilot-bridge.js';
+import { isClaudeCodeRequest, handleClaudeCodeBridge } from './claude-code-bridge.js';
+import { isCodexRequest, handleCodexBridge } from './codex-bridge.js';
+import { isCursorRequest, handleCursorBridge } from './cursor-bridge.js';
 import { isMultiAgentCommand, handleMultiAgentCommand } from './multi-agent.js';
 
 const BASE_PROMPT = `You are ${config.agent.name}, a personal AI assistant connected to WhatsApp.
@@ -87,6 +90,33 @@ export async function handleMessage(sender, text, whatsappClient, isGroup = fals
     if (isCopilotRequest(text)) {
       auditLog('INFO', 'copilot-bridge-request', { sender, length: text.length, explicit: true });
       const result = await handleCopilotBridge(sender, text);
+      await whatsappClient.sendMessage(sender, result);
+      recordOutgoing();
+      return;
+    }
+
+    // Claude Code Bridge: !claude / !cc prefix
+    if (isClaudeCodeRequest(text)) {
+      auditLog('INFO', 'claude-code-bridge-request', { sender, length: text.length });
+      const result = await handleClaudeCodeBridge(sender, text);
+      await whatsappClient.sendMessage(sender, result);
+      recordOutgoing();
+      return;
+    }
+
+    // Codex Bridge: !codex / !cx prefix
+    if (isCodexRequest(text)) {
+      auditLog('INFO', 'codex-bridge-request', { sender, length: text.length });
+      const result = await handleCodexBridge(sender, text);
+      await whatsappClient.sendMessage(sender, result);
+      recordOutgoing();
+      return;
+    }
+
+    // Cursor Bridge: !cursor / !cu prefix
+    if (isCursorRequest(text)) {
+      auditLog('INFO', 'cursor-bridge-request', { sender, length: text.length });
+      const result = await handleCursorBridge(sender, text);
       await whatsappClient.sendMessage(sender, result);
       recordOutgoing();
       return;

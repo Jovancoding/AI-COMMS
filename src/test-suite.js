@@ -346,6 +346,72 @@ test('provider router exports getProvider function', () => {
   assert(typeof providerRouter.getProvider === 'function', 'getProvider should be a function');
 });
 
+// --- 8b. Claude Code Bridge ---
+console.log('\n[Claude Code Bridge]');
+const claudeCodeBridge = await import('./claude-code-bridge.js');
+
+test('isClaudeCodeRequest detects !claude prefix', () => {
+  assert(claudeCodeBridge.isClaudeCodeRequest('!claude fix the bug'), '!claude should match');
+  assert(claudeCodeBridge.isClaudeCodeRequest('!cc refactor this'), '!cc should match');
+  assert(!claudeCodeBridge.isClaudeCodeRequest('hello'), 'plain text should not match');
+  assert(!claudeCodeBridge.isClaudeCodeRequest(''), 'empty should not match');
+  assert(!claudeCodeBridge.isClaudeCodeRequest(null), 'null should not match');
+});
+
+test('isClaudeCodeBridgeAvailable returns false when bridge is down', async () => {
+  const available = await claudeCodeBridge.isClaudeCodeBridgeAvailable();
+  assert(available === false, 'bridge should not be available in test');
+});
+
+test('handleClaudeCodeBridge returns error when bridge is down', async () => {
+  const result = await claudeCodeBridge.handleClaudeCodeBridge('test@s.whatsapp.net', '!claude hello');
+  assert(result.includes('not running'), 'should report bridge not running');
+});
+
+// --- 8c. Codex Bridge ---
+console.log('\n[Codex Bridge]');
+const codexBridge = await import('./codex-bridge.js');
+
+test('isCodexRequest detects !codex prefix', () => {
+  assert(codexBridge.isCodexRequest('!codex write tests'), '!codex should match');
+  assert(codexBridge.isCodexRequest('!cx generate types'), '!cx should match');
+  assert(!codexBridge.isCodexRequest('hello'), 'plain text should not match');
+  assert(!codexBridge.isCodexRequest(''), 'empty should not match');
+  assert(!codexBridge.isCodexRequest(null), 'null should not match');
+});
+
+test('isCodexBridgeAvailable returns false when bridge is down', async () => {
+  const available = await codexBridge.isCodexBridgeAvailable();
+  assert(available === false, 'bridge should not be available in test');
+});
+
+test('handleCodexBridge returns error when bridge is down', async () => {
+  const result = await codexBridge.handleCodexBridge('test@s.whatsapp.net', '!codex hello');
+  assert(result.includes('not running'), 'should report bridge not running');
+});
+
+// --- 8d. Cursor Bridge ---
+console.log('\n[Cursor Bridge]');
+const cursorBridge = await import('./cursor-bridge.js');
+
+test('isCursorRequest detects !cursor prefix', () => {
+  assert(cursorBridge.isCursorRequest('!cursor add endpoint'), '!cursor should match');
+  assert(cursorBridge.isCursorRequest('!cu fix lint'), '!cu should match');
+  assert(!cursorBridge.isCursorRequest('hello'), 'plain text should not match');
+  assert(!cursorBridge.isCursorRequest(''), 'empty should not match');
+  assert(!cursorBridge.isCursorRequest(null), 'null should not match');
+});
+
+test('isCursorBridgeAvailable returns false when bridge is down', async () => {
+  const available = await cursorBridge.isCursorBridgeAvailable();
+  assert(available === false, 'bridge should not be available in test');
+});
+
+test('handleCursorBridge returns error when bridge is down', async () => {
+  const result = await cursorBridge.handleCursorBridge('test@s.whatsapp.net', '!cursor hello');
+  assert(result.includes('not running'), 'should report bridge not running');
+});
+
 // --- 9. Startup Checks ---
 console.log('\n[Startup Checks]');
 const startup = await import('./startup-checks.js');

@@ -18,7 +18,7 @@
 
 **Deploy AI agents that talk to each other — and to humans — over WhatsApp, Telegram, and Microsoft Teams. Connect multiple VS Code instances with Copilot. Build agent teams that span computers worldwide.**
 
-[Quick Start](#-quick-start) · [Architecture](#-architecture) · [Agent Hub](#-agent-hub) · [Multi-Agent](#-multi-agent-teams) · [Copilot Bridge](#-copilot-bridge) · [Security](#-security) · [Docs](#-documentation)
+[Quick Start](#-quick-start) · [Architecture](#-architecture) · [Agent Hub](#-agent-hub) · [Multi-Agent](#-multi-agent-teams) · [Bridges](#-bridges) · [Security](#-security) · [Docs](#-documentation)
 
 </div>
 
@@ -88,7 +88,7 @@ The architecture isn't about distributing compute — it's about **context isola
 | **WhatsApp + Telegram + Teams** | Connect to any combination of platforms simultaneously |
 | **Agent Hub** | WebSocket relay server — agents anywhere in the world connect and collaborate |
 | **Multi-Agent Teams** | Multiple VS Code instances work together: parallel tasks, team decomposition, broadcast |
-| **Copilot Bridge** | VS Code extension that gives Copilot real tools — file ops, terminal, browser, screen control |
+| **4 IDE Bridges** | Copilot (VS Code), Claude Code, Codex, and Cursor — route tasks from WhatsApp to any IDE agent |
 | **Agent Protocol** | Structured JSON messaging between agents with HMAC signatures |
 | **E2E Encryption** | AES-256-GCM encrypted payloads between agents |
 | **Jailbreak Defense** | 6-layer prompt injection protection |
@@ -138,6 +138,9 @@ src/
 ├── config.js             # All environment variable mappings
 ├── multi-agent.js        # Multi-agent coordinator — discovery, routing, teams
 ├── copilot-bridge.js     # Copilot Bridge client — sends tasks to VS Code extension
+├── claude-code-bridge.js # Claude Code Bridge client — sends tasks to Claude Code CLI
+├── codex-bridge.js       # Codex Bridge client — sends tasks to OpenAI Codex CLI
+├── cursor-bridge.js      # Cursor Bridge client — sends tasks to Cursor IDE
 ├── protocol.js           # Agent-to-agent JSON protocol + HMAC signing
 ├── groups.js             # Multi-agent group management
 ├── storage.js            # JSON persistence with atomic writes
@@ -270,6 +273,9 @@ AGENT_HUB_SECRET=your-secret
 
 | Command | Description |
 |---------|-------------|
+| `!claude <task>` / `!cc <task>` | Send task to Claude Code bridge |
+| `!codex <task>` / `!cx <task>` | Send task to Codex bridge |
+| `!cursor <task>` / `!cu <task>` | Send task to Cursor bridge |
 | `!agents status` | List all agents with health status |
 | `!agents list` | Show agent names and skills |
 | `!agents send <name> <task>` | Send a task to a specific agent |
@@ -316,46 +322,89 @@ Local LLMs running on Raspberry Pis, NVIDIA Jetsons, or any device with Node.js.
 
 ---
 
-## Copilot Bridge
+## Bridges
 
-The Copilot Bridge is a VS Code extension that turns GitHub Copilot into an agent with real capabilities. It exposes Copilot through an HTTP server with tools for file operations, terminal commands, browser control, and more.
+AI COMMS supports 4 IDE bridges — each connects a different coding agent to your WhatsApp/Telegram messages via a local HTTP server.
 
-### How It Works
+### How Bridges Work
 
 ```
-WhatsApp/Telegram ──► Bot (Node.js) ──► Copilot Bridge (VS Code, localhost:3120)
-                                              │
-                                        GitHub Copilot
-                                        (AI model + tools)
+WhatsApp/Telegram ──► Bot (Node.js) ──┬── Copilot Bridge  (VS Code,     :3120)
+                                      ├── Claude Code     (CLI agent,   :3121)
+                                      ├── Codex           (CLI agent,   :3122)
+                                      └── Cursor          (Cursor IDE,  :3123)
 ```
 
-1. A message arrives on WhatsApp or Telegram
-2. The orchestrator forwards it to the Copilot Bridge HTTP endpoint
-3. The extension sends the message to GitHub Copilot with tool definitions
-4. Copilot processes the request, calling tools as needed (file read/write, terminal, browser, etc.)
+1. A message arrives on WhatsApp or Telegram with a prefix (`!copilot`, `!claude`, `!codex`, `!cursor`)
+2. The orchestrator routes it to the matching bridge's HTTP endpoint
+3. The bridge forwards it to the IDE/CLI agent
+4. The agent processes the request (file edits, terminal, tools, etc.)
 5. The response flows back through the messaging platform
 
-### What Copilot Can Do via the Bridge
+### Copilot Bridge (VS Code)
 
-The extension provides tools across these categories:
+The Copilot Bridge is a VS Code extension that turns GitHub Copilot into an agent with real capabilities — file ops, terminal, browser, screen control.
 
-- **Code**: Read, write, search files; run terminal commands; manage VS Code workspace
-- **Browser**: Navigate Chrome, execute JavaScript in pages, read tab content via Chrome DevTools Protocol
-- **Screen**: Capture screen, OCR text recognition, mouse/keyboard control, UI Automation
-- **System**: Process manager, services, registry, network diagnostics, disk info
-- **Apps**: Launch and control any Windows application, read app content via UI Automation
-
-### Configuration
+| Prefix | Example |
+|--------|---------|
+| `!copilot` / `!cp` | `!copilot fix the failing test in auth.ts` |
 
 ```bash
 COPILOT_BRIDGE_PORT=3120
-# Optional: token-based auth between bot and bridge
 COPILOT_BRIDGE_TOKEN=your-shared-token
-# Optional: auto-route all messages to bridge (default: false, requires !copilot prefix)
 COPILOT_BRIDGE_AUTO_ROUTE=false
 ```
 
-The extension does not auto-start. Enable it manually via VS Code Command Palette → **"Copilot Bridge: Start Server"**.
+Start via VS Code Command Palette → **"Copilot Bridge: Start Server"**.
+
+### Claude Code Bridge
+
+Routes tasks to the Claude Code CLI agent. Claude Code excels at multi-step coding tasks with extended thinking.
+
+| Prefix | Example |
+|--------|---------|
+| `!claude` / `!cc` | `!claude refactor the auth module to use JWT` |
+
+```bash
+CLAUDE_CODE_BRIDGE_PORT=3121
+CLAUDE_CODE_BRIDGE_TOKEN=your-shared-token
+```
+
+### Codex Bridge
+
+Routes tasks to the OpenAI Codex CLI agent. Codex is optimized for code generation and understanding.
+
+| Prefix | Example |
+|--------|---------|
+| `!codex` / `!cx` | `!codex generate TypeScript types from this JSON schema` |
+
+```bash
+CODEX_BRIDGE_PORT=3122
+CODEX_BRIDGE_TOKEN=your-shared-token
+```
+
+### Cursor Bridge
+
+Routes tasks to a Cursor IDE instance. Cursor provides AI-powered code editing with its own agent.
+
+| Prefix | Example |
+|--------|---------|
+| `!cursor` / `!cu` | `!cursor add error handling to all API endpoints` |
+
+```bash
+CURSOR_BRIDGE_PORT=3123
+CURSOR_BRIDGE_TOKEN=your-shared-token
+```
+
+### Bridge API Contract
+
+All bridges share the same HTTP contract — any server implementing these endpoints can plug in:
+
+```
+GET  /health          → 200 OK
+POST /chat            → { "message": "...", "sender": "..." }
+                      ← { "response": "..." }
+```
 
 ---
 
@@ -460,7 +509,7 @@ These protections are implemented across the codebase:
 | **Broadcast rate limit** | Hub | 10-second cooldown between broadcasts — prevents agent spam |
 | **TLS support** | Hub | Optional HTTPS via `TLS_CERT_PATH` + `TLS_KEY_PATH` |
 | **Sanitized API responses** | Hub | `/agents` endpoint excludes internal metadata (timestamps, workspace paths) |
-| **Bridge authentication** | Copilot Bridge | Optional `COPILOT_BRIDGE_TOKEN` for bot-to-extension auth |
+| **Bridge authentication** | All 4 bridges | Optional token auth (`*_BRIDGE_TOKEN`) for bot-to-agent auth |
 | **Auto-route opt-in** | Orchestrator | `COPILOT_BRIDGE_AUTO_ROUTE=false` by default — requires explicit `!copilot` prefix |
 | **URL validation** | Multi-Agent | Agent registry URLs validated (protocol check, SSRF prevention) |
 | **Task plan limits** | Multi-Agent | Max 20 subtasks per team decomposition, 10K chars per task message |
