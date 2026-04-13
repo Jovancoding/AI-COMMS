@@ -16,7 +16,7 @@
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/Jovancoding/AI-COMMS/pulls)
 [![RSS](https://img.shields.io/badge/RSS-Feed-FFA500?logo=rss&logoColor=white)](https://github.com/Jovancoding/AI-COMMS/releases.atom)
 
-**Deploy AI agents that talk to each other — and to humans — over WhatsApp, Telegram, and Microsoft Teams. Connect multiple VS Code instances with Copilot. Build agent teams that span computers worldwide.**
+**Deploy AI agents that talk to each other — and to humans — over WhatsApp, Telegram, and Microsoft Teams. Connect VS Code (Copilot), Claude Code, Codex, Cursor, and OpenClaw through 5 bridge adapters. Build agent teams that span computers worldwide.**
 
 [Quick Start](#-quick-start) · [Architecture](#-architecture) · [CLI](#-cli) · [Agent Hub](#-agent-hub) · [Multi-Agent](#-multi-agent-teams) · [Bridges](#-bridges) · [Security](#-security) · [Docs](#-documentation)
 
@@ -30,7 +30,7 @@
 
 ## What is AI COMMS?
 
-AI COMMS is an agent communication network. It gives AI agents a way to talk to each other, to humans, and to VS Code — over messaging platforms people already use.
+AI COMMS is an agent communication network. It gives AI agents a way to talk to each other, to humans, and to any IDE or AI tool — over messaging platforms people already use.
 
 ### Why not just use one AI session?
 
@@ -55,10 +55,10 @@ The architecture isn't about distributing compute — it's about **context isola
           │               │                  │
    ┌──────┴──────┐ ┌──────┴──────┐  ┌───────┴──────┐
    │ Computer A  │ │ Computer B  │  │ Computer C   │
-   │ VS Code x2  │ │ VS Code x1  │  │ VS Code x3   │
+   │ Copilot x2  │ │ Claude Code │  │ Cursor x2    │
    │ Agent: back │ │ Agent: front│  │ Agent: devops│
    │ Agent: test │ │             │  │ Agent: data  │
-   │ Copilot     │ │ Copilot     │  │ Agent: ml    │
+   │ Codex       │ │ OpenClaw    │  │ Agent: ml    │
    └──────┬──────┘ └──────┴──────┘  └───────┬──────┘
           │               │                  │
           └───────────────┼──────────────────┘
@@ -73,7 +73,7 @@ The architecture isn't about distributing compute — it's about **context isola
                       Humans
 ```
 
-- **Agents** are AI models running inside VS Code with GitHub Copilot
+- **Agents** are AI models running inside any supported IDE or tool (VS Code/Copilot, Claude Code, Codex, Cursor, OpenClaw)
 - **The Hub** connects agents across machines via WebSocket
 - **Messaging platforms** let humans send tasks and receive results
 - **The orchestrator** routes messages between all of them
@@ -148,7 +148,7 @@ npx ai-comms --bridge copilot "fix the failing test"
 ```
 src/
 ├── index.js              # Entry — multi-platform startup, graceful shutdown
-├── orchestrator.js       # Message routing: security → copilot bridge → AI → response
+├── orchestrator.js       # Message routing: security → bridge routing → AI → response
 ├── config.js             # All environment variable mappings
 ├── multi-agent.js        # Multi-agent coordinator — discovery, routing, teams
 ├── cli.js                # CLI entry point — REPL, one-shot, bridge relay
@@ -361,14 +361,14 @@ The hub runs on port 8090 by default.
 
 ### Connecting Agents
 
-On each machine running a VS Code agent, set these in `.env`:
+On each machine running an agent, set these in `.env`:
 
 ```bash
 AGENT_HUB_URL=http://your-hub-server:8090
 AGENT_HUB_SECRET=your-secret-here
 ```
 
-The Copilot Bridge extension auto-connects to the hub on startup and registers with its name and skills.
+Any bridge (Copilot, Claude Code, Codex, Cursor, OpenClaw) auto-connects to the hub on startup and registers with its name and skills.
 
 ### How It Works
 
@@ -447,7 +447,7 @@ npm run connector:openclaw
 
 ## Multi-Agent Teams
 
-Run multiple VS Code instances on one computer — or across many — and have them collaborate as a team.
+Run multiple IDE/agent instances on one computer — or across many — and have them collaborate as a team. Mix and match any of the 5 bridges: Copilot, Claude Code, Codex, Cursor, OpenClaw.
 
 ### Setup Options
 
@@ -457,7 +457,7 @@ Run multiple VS Code instances on one computer — or across many — and have t
 MULTI_AGENT_PORTS=3120,3121,3122
 ```
 
-Each port is a VS Code instance with the Copilot Bridge extension.
+Each port is an agent instance — any bridge type (Copilot on :3120, Claude Code on :3121, Cursor on :3123, etc.).
 
 **Option B — Named registry with skills**
 
@@ -496,7 +496,7 @@ The coordinator analyzes your task, matches subtasks to agents by skill, and run
 
 **Example: Multi-repo feature rollout**
 
-You have 3 VS Code windows open — `api-server`, `web-dashboard`, `mobile-app`. From your phone:
+You have 3 agent instances running — `api-server` (Copilot), `web-dashboard` (Cursor), `mobile-app` (Claude Code). From your phone:
 
 ```
 You (WhatsApp): !team add a /health endpoint to the API,
@@ -510,7 +510,7 @@ Coordinator decomposes → 3 subtasks:
   2. Agent "web-dashboard" → adds status widget to dashboard (parallel)
   3. Agent "mobile-app"    → adds health check to settings   (parallel)
 
-All 3 run simultaneously in their own VS Code workspaces.
+All 3 run simultaneously in their own workspaces across different IDEs.
 Combined result returned to your WhatsApp in ~40 seconds.
 ```
 
