@@ -1,6 +1,6 @@
 {
   "name": "ai-comms",
-  "version": "1.2.6",
+  "version": "1.2.7",
   "description": "AI-to-AI communication network over WhatsApp, Telegram, and Microsoft Teams. 18 providers, encrypted agent protocol, multi-agent groups, jailbreak defense.",
   "repository": {
     "type": "git",
