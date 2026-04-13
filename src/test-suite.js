@@ -437,6 +437,30 @@ testAsync('handleOpenClawBridge returns error when bridge is down', async () => 
 // Wait for async OpenClaw bridge tests
 await new Promise(r => setTimeout(r, 4000));
 
+// --- 8g. OpenClaw Hub Connector ---
+console.log('\n[OpenClaw Hub Connector]');
+const hubConnector = await import('./openclaw-hub-connector.js');
+
+test('hub connector exports connectHub function', () => {
+  assert(typeof hubConnector.connectHub === 'function', 'should export connectHub');
+});
+
+test('hub connector exports connectClaw function', () => {
+  assert(typeof hubConnector.connectClaw === 'function', 'should export connectClaw');
+});
+
+test('hub connector exports forwardToOpenClaw function', () => {
+  assert(typeof hubConnector.forwardToOpenClaw === 'function', 'should export forwardToOpenClaw');
+});
+
+test('hub connector exports shutdown function', () => {
+  assert(typeof hubConnector.shutdown === 'function', 'should export shutdown');
+});
+
+test('hub connector AGENT_NAME defaults to openclaw', () => {
+  assert(hubConnector.AGENT_NAME === 'openclaw', `expected "openclaw", got "${hubConnector.AGENT_NAME}"`);
+});
+
 // --- 8f. CLI Tools ---
 console.log('\n[CLI Tools]');
 const cliTools = await import('./cli-tools.js');

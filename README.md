@@ -400,6 +400,51 @@ Agent "devops" (Tokyo) ──WebSocket──┘
 
 ---
 
+## OpenClaw Hub Connector
+
+The Hub Connector bridges an [OpenClaw](https://github.com/AiCEG/OpenClaw) Gateway instance to the AI COMMS Agent Hub, making OpenClaw agents discoverable on the multi-agent mesh.
+
+### How It Works
+
+```
+OpenClaw Gateway (ws://127.0.0.1:18789)
+        ↑  ↓
+  ┌─────────────────┐
+  │  Hub Connector   │  ← registers as agent "openclaw"
+  └─────────────────┘
+        ↑  ↓
+  Agent Hub (ws://127.0.0.1:8090)
+        ↑  ↓
+  Other Hub agents (backend, frontend, devops …)
+```
+
+- Hub tasks addressed to `openclaw` are forwarded to the OpenClaw Gateway
+- OpenClaw responses are relayed back to the requesting Hub agent
+- Auto-reconnect (5 s delay) and heartbeat (25 s) keep both connections alive
+
+### Quick Start
+
+```bash
+# Set required env vars
+export HUB_SECRET=your-secret
+export OPENCLAW_GATEWAY=ws://127.0.0.1:18789
+export HUB_URL=ws://127.0.0.1:8090
+
+# Start the connector
+npm run connector:openclaw
+```
+
+### Configuration
+
+| Variable | Default | Description |
+|---|---|---|
+| `OPENCLAW_GATEWAY` | `ws://127.0.0.1:18789` | OpenClaw Gateway WebSocket URL |
+| `HUB_URL` | `ws://127.0.0.1:8090` | Agent Hub WebSocket URL |
+| `HUB_SECRET` | *(empty)* | Shared secret for Hub authentication |
+| `OPENCLAW_HUB_NAME` | `openclaw` | Agent name registered on the Hub |
+
+---
+
 ## Multi-Agent Teams
 
 Run multiple VS Code instances on one computer — or across many — and have them collaborate as a team.
