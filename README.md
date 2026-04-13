@@ -265,6 +265,53 @@ Bridge Status:
 | `/help` | Show help |
 | `/quit` | Exit |
 
+### Diagnostics
+
+```bash
+ai-comms doctor
+```
+```
+  AI COMMS Doctor
+  ========================================
+  ✔ Node.js              v22.1.0
+  ✔ .env file             found
+  ✔ AI provider           openai — key configured
+  ✔ Model                 gpt-5-mini
+  ✔ API connectivity      openai — reachable
+  ! Bridge: copilot       port 3120 — offline
+  ! Bridge: claude        port 3121 — offline
+  ✔ npm                   10.8.0
+
+  All checks passed
+```
+
+### Output formats
+
+```bash
+ai-comms -f json agents status        # JSON output
+ai-comms -f csv agents status         # CSV output
+ai-comms -f table agents status       # Table output
+ai-comms -f json doctor               # Doctor results as JSON
+```
+
+### Verbose mode
+
+```bash
+ai-comms -v "debug this issue"        # Enable verbose logging
+```
+
+### Exit codes
+
+| Code | Name | Meaning |
+|------|------|---------|
+| `0` | OK | Success |
+| `1` | ERROR | General error |
+| `2` | USAGE | Bad usage / invalid arguments |
+| `66` | NOINPUT | Input data missing |
+| `69` | UNAVAILABLE | Service unavailable (bridge offline) |
+| `77` | NOPERM | Permission / auth failure |
+| `78` | CONFIG | Configuration error |
+
 ### Native tools (standalone mode)
 
 | Tool | Description |
