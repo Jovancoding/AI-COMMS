@@ -412,6 +412,79 @@ test('handleCursorBridge returns error when bridge is down', async () => {
   assert(result.includes('not running'), 'should report bridge not running');
 });
 
+// --- 8e. CLI Tools ---
+console.log('\n[CLI Tools]');
+const cliTools = await import('./cli-tools.js');
+
+test('cli tools exports toolDefinitions array', () => {
+  assert(Array.isArray(cliTools.toolDefinitions), 'should be an array');
+  assert(cliTools.toolDefinitions.length >= 10, 'should have at least 10 tools');
+});
+
+test('cli tools exports executeTool function', () => {
+  assert(typeof cliTools.executeTool === 'function', 'should be a function');
+});
+
+test('cli read_file tool reads a file', async () => {
+  const result = await cliTools.executeTool('read_file', { path: 'package.json' });
+  assert(result.includes('ai-comms'), 'should read package.json content');
+});
+
+test('cli list_directory tool lists current dir', async () => {
+  const result = await cliTools.executeTool('list_directory', { path: '.' });
+  assert(result.includes('src/'), 'should list src directory');
+  assert(result.includes('package.json'), 'should list package.json');
+});
+
+test('cli run_command tool executes commands', async () => {
+  const result = await cliTools.executeTool('run_command', { command: 'node --version' });
+  assert(result.startsWith('v'), 'should return node version');
+});
+
+test('cli system_info tool returns system info', async () => {
+  const result = await cliTools.executeTool('system_info', {});
+  const info = JSON.parse(result);
+  assert(info.platform, 'should have platform');
+  assert(info.nodeVersion, 'should have nodeVersion');
+});
+
+test('cli file_info tool returns file metadata', async () => {
+  const result = await cliTools.executeTool('file_info', { path: 'package.json' });
+  const info = JSON.parse(result);
+  assert(info.type === 'file', 'should be a file');
+  assert(info.size > 0, 'should have size');
+});
+
+test('cli grep tool searches file contents', async () => {
+  const result = await cliTools.executeTool('grep', { pattern: 'ai-comms', directory: '.' });
+  assert(result.includes('package.json'), 'should find ai-comms in package.json');
+});
+
+test('cli search_files tool finds files', async () => {
+  const result = await cliTools.executeTool('search_files', { pattern: 'cli', directory: 'src' });
+  assert(result.includes('cli'), 'should find CLI files');
+});
+
+test('cli write_file and delete_file tools work', async () => {
+  await cliTools.executeTool('write_file', { path: 'test-cli-temp.txt', content: 'hello' });
+  const read = await cliTools.executeTool('read_file', { path: 'test-cli-temp.txt' });
+  assert(read === 'hello', 'should read back written content');
+  await cliTools.executeTool('delete_file', { path: 'test-cli-temp.txt' });
+  const after = await cliTools.executeTool('read_file', { path: 'test-cli-temp.txt' });
+  assert(after.includes('not found'), 'should be deleted');
+});
+
+test('cli unknown tool returns error', async () => {
+  const result = await cliTools.executeTool('nonexistent_tool', {});
+  assert(result.includes('Unknown tool'), 'should return error for unknown tool');
+});
+
+test('cli http_request tool works', async () => {
+  // Use a URL that will fail — we just want to confirm it doesn't crash
+  const result = await cliTools.executeTool('http_request', { url: 'http://127.0.0.1:1/nope' });
+  assert(result.includes('Error'), 'should return error for unreachable URL');
+});
+
 // --- 9. Startup Checks ---
 console.log('\n[Startup Checks]');
 const startup = await import('./startup-checks.js');

@@ -1,6 +1,6 @@
 {
   "name": "ai-comms",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "AI-to-AI communication network over WhatsApp, Telegram, and Microsoft Teams. 18 providers, encrypted agent protocol, multi-agent groups, jailbreak defense.",
   "repository": {
     "type": "git",
@@ -12,11 +12,12 @@
   },
   "main": "src/index.js",
   "bin": {
-    "ai-comms": "src/index.js"
+    "ai-comms": "src/cli.js"
   },
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
+    "cli": "node src/cli.js",
     "test": "node src/test-suite.js",
     "check": "node --check src/index.js",
     "release": "npm version patch && git push && git push --tags",

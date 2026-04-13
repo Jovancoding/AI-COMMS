@@ -18,7 +18,7 @@
 
 **Deploy AI agents that talk to each other — and to humans — over WhatsApp, Telegram, and Microsoft Teams. Connect multiple VS Code instances with Copilot. Build agent teams that span computers worldwide.**
 
-[Quick Start](#-quick-start) · [Architecture](#-architecture) · [Agent Hub](#-agent-hub) · [Multi-Agent](#-multi-agent-teams) · [Bridges](#-bridges) · [Security](#-security) · [Docs](#-documentation)
+[Quick Start](#-quick-start) · [Architecture](#-architecture) · [CLI](#-cli) · [Agent Hub](#-agent-hub) · [Multi-Agent](#-multi-agent-teams) · [Bridges](#-bridges) · [Security](#-security) · [Docs](#-documentation)
 
 </div>
 
@@ -89,6 +89,7 @@ The architecture isn't about distributing compute — it's about **context isola
 | **Agent Hub** | WebSocket relay server — agents anywhere in the world connect and collaborate |
 | **Multi-Agent Teams** | Multiple VS Code instances work together: parallel tasks, team decomposition, broadcast |
 | **4 IDE Bridges** | Copilot (VS Code), Claude Code, Codex, and Cursor — route tasks from WhatsApp to any IDE agent |
+| **CLI** | Full computer control from your terminal — standalone mode with 12 native tools, or relay to any bridge |
 | **Agent Protocol** | Structured JSON messaging between agents with HMAC signatures |
 | **E2E Encryption** | AES-256-GCM encrypted payloads between agents |
 | **Jailbreak Defense** | 6-layer prompt injection protection |
@@ -125,6 +126,19 @@ npm start
 
 For WhatsApp (Baileys mode), scan the QR code in your terminal. For Telegram, the bot connects automatically via long-polling.
 
+**CLI mode** (no messaging platform needed):
+
+```bash
+# Interactive REPL with AI + tools
+npm run cli
+
+# One-shot task
+npx ai-comms "find all TODO comments in src/ and list them"
+
+# Relay to a running bridge
+npx ai-comms --bridge copilot "fix the failing test"
+```
+
 > **Token Safety:** Never commit your `.env` file. It contains API keys and tokens. The `.gitignore` already excludes it, but always verify before pushing. Rotate any tokens that may have been exposed. Set spending limits on all AI provider accounts.
 
 ---
@@ -137,6 +151,8 @@ src/
 ├── orchestrator.js       # Message routing: security → copilot bridge → AI → response
 ├── config.js             # All environment variable mappings
 ├── multi-agent.js        # Multi-agent coordinator — discovery, routing, teams
+├── cli.js                # CLI entry point — REPL, one-shot, bridge relay
+├── cli-tools.js          # 12 native tools — file, shell, HTTP, search, system
 ├── copilot-bridge.js     # Copilot Bridge client — sends tasks to VS Code extension
 ├── claude-code-bridge.js # Claude Code Bridge client — sends tasks to Claude Code CLI
 ├── codex-bridge.js       # Codex Bridge client — sends tasks to OpenAI Codex CLI
@@ -169,6 +185,102 @@ src/
 hub/
 └── server.js             # WebSocket Agent Hub — global relay server
 ```
+
+---
+
+## CLI
+
+Full computer control from your terminal. Two modes:
+
+**Standalone** — The AI has 12 native tools (read/write files, run shell commands, search code, HTTP requests, system info). No IDE or bridge needed.
+
+**Bridge relay** — Route tasks to a running Copilot, Claude Code, Codex, or Cursor bridge.
+
+### Install globally
+
+```bash
+npm install -g ai-comms
+```
+
+### Interactive REPL
+
+```bash
+ai-comms
+```
+```
+╔══════════════════════════════════════════════════╗
+║          AI COMMS CLI — Interactive Mode          ║
+╠══════════════════════════════════════════════════╣
+║  Agent: MyAI                                     ║
+║  Provider: openai                                ║
+║  Tools: 12                                       ║
+╚══════════════════════════════════════════════════╝
+
+You: find all files importing express and list them
+  → grep({"pattern": "import.*express", "directory": "."})
+  ← src/index.js:5: import express from 'express'...
+
+MyAI: Found 1 file importing express: src/index.js (line 5)
+```
+
+### One-shot tasks
+
+```bash
+ai-comms "run the tests and fix any failures"
+ai-comms "list all TODO comments in src/"
+ai-comms "create a .gitignore for a Node.js project"
+```
+
+### Bridge relay
+
+```bash
+ai-comms --bridge copilot "add error handling to all API endpoints"
+ai-comms --bridge claude "refactor auth module to use JWT"
+ai-comms --bridge codex "generate TypeScript types from schema.json"
+ai-comms --bridge cursor "fix the lint warnings in server.js"
+```
+
+### Agent management
+
+```bash
+ai-comms agents status
+```
+```
+Bridge Status:
+  copilot    :3120  🟢 online
+  claude     :3121  ⚫ offline
+  codex      :3122  ⚫ offline
+  cursor     :3123  🟢 online
+```
+
+### REPL commands
+
+| Command | Description |
+|---------|-------------|
+| `/bridge <name> <task>` | Relay to a bridge from REPL |
+| `/bridges` | Show bridge status |
+| `/tools` | List available tools |
+| `/provider` | Show active AI provider |
+| `/clear` | Clear conversation history |
+| `/help` | Show help |
+| `/quit` | Exit |
+
+### Native tools (standalone mode)
+
+| Tool | Description |
+|------|-------------|
+| `read_file` | Read file contents |
+| `write_file` | Write/create files |
+| `append_file` | Append to files |
+| `list_directory` | List directory contents |
+| `search_files` | Find files by name pattern |
+| `grep` | Search text inside files |
+| `run_command` | Execute shell commands |
+| `file_info` | Get file metadata |
+| `move_file` | Move/rename files |
+| `delete_file` | Delete files |
+| `http_request` | Make HTTP requests |
+| `system_info` | Get OS/CPU/memory info |
 
 ---
 
