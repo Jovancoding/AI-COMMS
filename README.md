@@ -88,7 +88,7 @@ The architecture isn't about distributing compute — it's about **context isola
 | **WhatsApp + Telegram + Teams** | Connect to any combination of platforms simultaneously |
 | **Agent Hub** | WebSocket relay server — agents anywhere in the world connect and collaborate |
 | **Multi-Agent Teams** | Multiple VS Code instances work together: parallel tasks, team decomposition, broadcast |
-| **4 IDE Bridges** | Copilot (VS Code), Claude Code, Codex, and Cursor — route tasks from WhatsApp to any IDE agent |
+| **5 IDE Bridges** | Copilot (VS Code), Claude Code, Codex, Cursor, and OpenClaw — route tasks from WhatsApp to any IDE or AI agent |
 | **CLI** | Full computer control from your terminal — standalone mode with 12 native tools, or relay to any bridge |
 | **Agent Protocol** | Structured JSON messaging between agents with HMAC signatures |
 | **E2E Encryption** | AES-256-GCM encrypted payloads between agents |
@@ -157,6 +157,7 @@ src/
 ├── claude-code-bridge.js # Claude Code Bridge client — sends tasks to Claude Code CLI
 ├── codex-bridge.js       # Codex Bridge client — sends tasks to OpenAI Codex CLI
 ├── cursor-bridge.js      # Cursor Bridge client — sends tasks to Cursor IDE
+├── openclaw-bridge.js    # OpenClaw Bridge client — sends tasks to OpenClaw Gateway
 ├── protocol.js           # Agent-to-agent JSON protocol + HMAC signing
 ├── groups.js             # Multi-agent group management
 ├── storage.js            # JSON persistence with atomic writes
@@ -238,6 +239,7 @@ ai-comms --bridge copilot "add error handling to all API endpoints"
 ai-comms --bridge claude "refactor auth module to use JWT"
 ai-comms --bridge codex "generate TypeScript types from schema.json"
 ai-comms --bridge cursor "fix the lint warnings in server.js"
+ai-comms --bridge openclaw "summarize today's messages"
 ```
 
 ### Agent management
@@ -251,6 +253,7 @@ Bridge Status:
   claude     :3121  ⚫ offline
   codex      :3122  ⚫ offline
   cursor     :3123  🟢 online
+  openclaw   :3124  ⚫ offline
 ```
 
 ### REPL commands
@@ -435,6 +438,7 @@ AGENT_HUB_SECRET=your-secret
 | `!claude <task>` / `!cc <task>` | Send task to Claude Code bridge |
 | `!codex <task>` / `!cx <task>` | Send task to Codex bridge |
 | `!cursor <task>` / `!cu <task>` | Send task to Cursor bridge |
+| `!claw <task>` / `!oc <task>` | Send task to OpenClaw bridge |
 | `!agents status` | List all agents with health status |
 | `!agents list` | Show agent names and skills |
 | `!agents send <name> <task>` | Send a task to a specific agent |
@@ -483,7 +487,7 @@ Local LLMs running on Raspberry Pis, NVIDIA Jetsons, or any device with Node.js.
 
 ## Bridges
 
-AI COMMS supports 4 IDE bridges — each connects a different coding agent to your WhatsApp/Telegram messages via a local HTTP server.
+AI COMMS supports 5 IDE/AI bridges — each connects a different coding agent to your WhatsApp/Telegram messages via a local HTTP server.
 
 ### How Bridges Work
 
@@ -491,10 +495,11 @@ AI COMMS supports 4 IDE bridges — each connects a different coding agent to yo
 WhatsApp/Telegram ──► Bot (Node.js) ──┬── Copilot Bridge  (VS Code,     :3120)
                                       ├── Claude Code     (CLI agent,   :3121)
                                       ├── Codex           (CLI agent,   :3122)
-                                      └── Cursor          (Cursor IDE,  :3123)
+                                      ├── Cursor          (Cursor IDE,  :3123)
+                                      └── OpenClaw        (Personal AI, :3124)
 ```
 
-1. A message arrives on WhatsApp or Telegram with a prefix (`!copilot`, `!claude`, `!codex`, `!cursor`)
+1. A message arrives on WhatsApp or Telegram with a prefix (`!copilot`, `!claude`, `!codex`, `!cursor`, `!claw`)
 2. The orchestrator routes it to the matching bridge's HTTP endpoint
 3. The bridge forwards it to the IDE/CLI agent
 4. The agent processes the request (file edits, terminal, tools, etc.)
@@ -549,11 +554,27 @@ Routes tasks to a Cursor IDE instance. Cursor provides AI-powered code editing w
 | Prefix | Example |
 |--------|---------|
 | `!cursor` / `!cu` | `!cursor add error handling to all API endpoints` |
+| `!claw` / `!oc` | `!claw ship checklist for the release` |
 
 ```bash
 CURSOR_BRIDGE_PORT=3123
 CURSOR_BRIDGE_TOKEN=your-shared-token
 ```
+
+### OpenClaw Bridge
+
+Routes tasks to a running OpenClaw Gateway. OpenClaw is a personal AI assistant that runs on your own devices with multi-channel support.
+
+| Prefix | Example |
+|--------|--------|
+| `!claw` / `!oc` | `!claw summarize today's messages and draft a reply` |
+
+```bash
+OPENCLAW_BRIDGE_PORT=3124
+OPENCLAW_BRIDGE_TOKEN=your-shared-token
+```
+
+Requires OpenClaw running: `openclaw gateway --port 18789`
 
 ### Bridge API Contract
 

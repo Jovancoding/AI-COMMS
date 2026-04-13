@@ -27,6 +27,7 @@ import { isCopilotRequest, handleCopilotBridge, isBridgeAvailable } from './copi
 import { isClaudeCodeRequest, handleClaudeCodeBridge } from './claude-code-bridge.js';
 import { isCodexRequest, handleCodexBridge } from './codex-bridge.js';
 import { isCursorRequest, handleCursorBridge } from './cursor-bridge.js';
+import { isOpenClawRequest, handleOpenClawBridge } from './openclaw-bridge.js';
 import { isMultiAgentCommand, handleMultiAgentCommand } from './multi-agent.js';
 
 const BASE_PROMPT = `You are ${config.agent.name}, a personal AI assistant connected to WhatsApp.
@@ -117,6 +118,15 @@ export async function handleMessage(sender, text, whatsappClient, isGroup = fals
     if (isCursorRequest(text)) {
       auditLog('INFO', 'cursor-bridge-request', { sender, length: text.length });
       const result = await handleCursorBridge(sender, text);
+      await whatsappClient.sendMessage(sender, result);
+      recordOutgoing();
+      return;
+    }
+
+    // OpenClaw Bridge: !claw / !oc prefix
+    if (isOpenClawRequest(text)) {
+      auditLog('INFO', 'openclaw-bridge-request', { sender, length: text.length });
+      const result = await handleOpenClawBridge(sender, text);
       await whatsappClient.sendMessage(sender, result);
       recordOutgoing();
       return;

@@ -47,6 +47,7 @@ const BRIDGES = {
   claude:   { port: process.env.CLAUDE_CODE_BRIDGE_PORT || 3121, token: process.env.CLAUDE_CODE_BRIDGE_TOKEN || '' },
   codex:    { port: process.env.CODEX_BRIDGE_PORT || 3122, token: process.env.CODEX_BRIDGE_TOKEN || '' },
   cursor:   { port: process.env.CURSOR_BRIDGE_PORT || 3123, token: process.env.CURSOR_BRIDGE_TOKEN || '' },
+  openclaw: { port: process.env.OPENCLAW_BRIDGE_PORT || 3124, token: process.env.OPENCLAW_BRIDGE_TOKEN || '' },
 };
 
 // --- Parse arguments ---
@@ -92,6 +93,7 @@ function printHelp() {
     claude      Claude Code CLI (port ${BRIDGES.claude.port})
     codex       OpenAI Codex    (port ${BRIDGES.codex.port})
     cursor      Cursor IDE      (port ${BRIDGES.cursor.port})
+    openclaw    OpenClaw AI     (port ${BRIDGES.openclaw.port})
 
   Commands:
     doctor                 Run diagnostics on your setup

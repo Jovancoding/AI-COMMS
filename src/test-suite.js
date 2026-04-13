@@ -412,7 +412,32 @@ test('handleCursorBridge returns error when bridge is down', async () => {
   assert(result.includes('not running'), 'should report bridge not running');
 });
 
-// --- 8e. CLI Tools ---
+// --- 8e. OpenClaw Bridge ---
+console.log('\n[OpenClaw Bridge]');
+const openclawBridge = await import('./openclaw-bridge.js');
+
+test('isOpenClawRequest detects !claw prefix', () => {
+  assert(openclawBridge.isOpenClawRequest('!claw ship checklist'), '!claw should match');
+  assert(openclawBridge.isOpenClawRequest('!oc fix auth'), '!oc should match');
+  assert(!openclawBridge.isOpenClawRequest('hello'), 'plain text should not match');
+  assert(!openclawBridge.isOpenClawRequest(''), 'empty should not match');
+  assert(!openclawBridge.isOpenClawRequest(null), 'null should not match');
+});
+
+testAsync('isOpenClawBridgeAvailable returns false when bridge is down', async () => {
+  const available = await openclawBridge.isOpenClawBridgeAvailable();
+  assert(available === false, 'bridge should not be available in test');
+});
+
+testAsync('handleOpenClawBridge returns error when bridge is down', async () => {
+  const result = await openclawBridge.handleOpenClawBridge('test@s.whatsapp.net', '!claw hello');
+  assert(result.includes('not running'), 'should report bridge not running');
+});
+
+// Wait for async OpenClaw bridge tests
+await new Promise(r => setTimeout(r, 4000));
+
+// --- 8f. CLI Tools ---
 console.log('\n[CLI Tools]');
 const cliTools = await import('./cli-tools.js');
 
