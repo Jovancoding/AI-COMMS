@@ -18,6 +18,8 @@
 
 **Deploy AI agents that talk to each other — and to humans — over WhatsApp, Telegram, and Microsoft Teams. Connect VS Code (Copilot), Claude Code, Codex, Cursor, and OpenClaw through 5 bridge adapters. Build agent teams that span computers worldwide.**
 
+Open-source multi-agent AI framework · WhatsApp AI bot · Telegram AI bot · Microsoft Teams AI bot · AI agent orchestration · LLM-powered chatbot · agent-to-agent communication · remote AI coding assistant · multi-model AI gateway · self-hosted AI assistant
+
 [Quick Start](#-quick-start) · [Architecture](#-architecture) · [CLI](#-cli) · [Agent Hub](#-agent-hub) · [Multi-Agent](#-multi-agent-teams) · [Bridges](#-bridges) · [Security](#-security) · [Docs](#-documentation)
 
 </div>
@@ -30,7 +32,7 @@
 
 ## What is AI COMMS?
 
-AI COMMS is an agent communication network. It gives AI agents a way to talk to each other, to humans, and to any IDE or AI tool — over messaging platforms people already use.
+AI COMMS is an open-source multi-agent AI communication framework. It gives AI agents a way to talk to each other, to humans, and to any IDE or AI tool — over messaging platforms people already use. Use it as a WhatsApp AI chatbot, Telegram AI assistant, Microsoft Teams AI bot, remote coding agent, or a full multi-agent orchestration network powered by 18 LLM providers.
 
 ### Why not just use one AI session?
 
@@ -895,6 +897,17 @@ npm test
 [MIT](LICENSE)
 
 ---
+
+---
+
+## Keywords
+
+<details>
+<summary>SEO · GEO · AEO — search and discovery keywords</summary>
+
+ai-comms, AI COMMS, whatsapp ai bot, whatsapp ai agent, whatsapp chatbot nodejs, telegram ai bot, telegram chatbot framework, microsoft teams ai bot, multi-agent ai framework, ai agent orchestration, llm chatbot, openai whatsapp bot, claude whatsapp bot, gemini chatbot, groq ai bot, ollama chatbot, self-hosted ai assistant, open source ai chatbot, ai agent communication protocol, remote coding agent, ai coding assistant whatsapp, copilot bridge, claude code bridge, codex bridge, cursor ai bridge, openclaw bridge, multi-model ai gateway, agent hub websocket, ai agent mesh network, distributed ai agents, multi-repo ai assistant, whatsapp automation nodejs, ai agent api, llm orchestration framework, prompt injection defense, encrypted ai messaging, ai agent network, agentic ai framework, mcp server, model context protocol, ai tool integration, vscode ai agent, ide ai bridge, ai agent relay, whatsapp bot api, telegram bot api nodejs, teams bot framework, ai-powered chatbot, conversational ai platform, ai agent deployment, cloud ai agents, edge ai agents, iot ai agent, local llm agent, ai agent coordination, agent-to-agent messaging, ai group chat, multi-agent collaboration, ai task decomposition, parallel ai agents, ai agent discovery, ai agent registry, real-time ai communication, cross-platform ai bot, ai bot framework 2025 2026
+
+</details>
 
 <div align="center">
 
