@@ -177,7 +177,7 @@ export async function handleMessage(sender, text, whatsappClient, isGroup = fals
   } else {
     const gate = securityGate(sender, text);
     if (!gate.allowed) {
-      console.warn(`[Security] Blocked message from ${sender}: ${gate.reason}`);
+      auditLog('BLOCK', 'human-message-blocked', { sender, reason: gate.reason });
       return; // silently drop — don't reply to unauthorized senders
     }
   }
@@ -304,49 +304,69 @@ function trimHistory(sender, history) {
 
 /**
  * Parse and execute group commands from AI responses.
+ * Validates command schema before execution.
  */
 async function executeGroupCommands(aiResponse, whatsappClient) {
   const jsonMatch = aiResponse.match(/```json\s*([\s\S]*?)```/);
   if (!jsonMatch) return null;
 
+  let cmd;
   try {
-    const cmd = JSON.parse(jsonMatch[1].trim());
-
-    switch (cmd.command) {
-      case 'create-group': {
-        const group = createGroup({ name: cmd.name, purpose: cmd.purpose, members: cmd.members || [] });
-        return `Group created: "${group.name}" (ID: ${group.groupId})`;
-      }
-      case 'add-member': {
-        const group = addMember(cmd.groupId, {
-          phone: cmd.phone,
-          agentId: cmd.agentId || cmd.phone,
-          agentName: cmd.agentName || 'Agent',
-        });
-        return `Added ${cmd.agentName || cmd.phone} to "${group.name}"`;
-      }
-      case 'remove-member': {
-        const group = removeMember(cmd.groupId, cmd.phone);
-        return `Removed ${cmd.phone} from "${group.name}"`;
-      }
-      case 'group-message': {
-        const selfAgent = { agentId: config.agent.id, agentName: config.agent.name };
-        await broadcastToGroup(cmd.groupId, selfAgent, 'group-chat', cmd.message, whatsappClient);
-        return `Message sent to group "${getGroup(cmd.groupId)?.name}"`;
-      }
-      case 'list-groups': {
-        const all = listGroups();
-        if (all.length === 0) return 'No groups yet.';
-        return all.map(g =>
-          `- "${g.name}" (${g.groupId}) — ${g.members.length} members — ${g.purpose || 'no purpose set'}`
-        ).join('\n');
-      }
-      default:
-        return null;
-    }
-  } catch (err) {
-    console.error('[Group Command] Failed:', err.message);
+    cmd = JSON.parse(jsonMatch[1].trim());
+  } catch {
     return null;
+  }
+
+  // Schema validation: only allow known commands with expected field types
+  if (typeof cmd !== 'object' || cmd === null || typeof cmd.command !== 'string') return null;
+
+  const ALLOWED_COMMANDS = ['create-group', 'add-member', 'remove-member', 'group-message', 'list-groups'];
+  if (!ALLOWED_COMMANDS.includes(cmd.command)) {
+    auditLog('WARN', 'unknown-group-command', { command: cmd.command });
+    return null;
+  }
+
+  // Per-command field validation
+  const isStr = v => typeof v === 'string' && v.length > 0 && v.length < 500;
+  const isOptStr = v => v === undefined || (typeof v === 'string' && v.length < 500);
+
+  switch (cmd.command) {
+    case 'create-group': {
+      if (!isStr(cmd.name)) return null;
+      if (!isOptStr(cmd.purpose)) return null;
+      const group = createGroup({ name: cmd.name, purpose: cmd.purpose, members: [] });
+      return `Group created: "${group.name}" (ID: ${group.groupId})`;
+    }
+    case 'add-member': {
+      if (!isStr(cmd.groupId) || !isStr(cmd.phone)) return null;
+      if (!isOptStr(cmd.agentName)) return null;
+      const group = addMember(cmd.groupId, {
+        phone: cmd.phone,
+        agentId: cmd.agentId || cmd.phone,
+        agentName: cmd.agentName || 'Agent',
+      });
+      return `Added ${cmd.agentName || cmd.phone} to "${group.name}"`;
+    }
+    case 'remove-member': {
+      if (!isStr(cmd.groupId) || !isStr(cmd.phone)) return null;
+      const group = removeMember(cmd.groupId, cmd.phone);
+      return `Removed ${cmd.phone} from "${group.name}"`;
+    }
+    case 'group-message': {
+      if (!isStr(cmd.groupId) || !isStr(cmd.message)) return null;
+      const selfAgent = { agentId: config.agent.id, agentName: config.agent.name };
+      await broadcastToGroup(cmd.groupId, selfAgent, 'group-chat', cmd.message, whatsappClient);
+      return `Message sent to group "${getGroup(cmd.groupId)?.name}"`;
+    }
+    case 'list-groups': {
+      const all = listGroups();
+      if (all.length === 0) return 'No groups yet.';
+      return all.map(g =>
+        `- "${g.name}" (${g.groupId}) — ${g.members.length} members — ${g.purpose || 'no purpose set'}`
+      ).join('\n');
+    }
+    default:
+      return null;
   }
 }
 

@@ -63,6 +63,63 @@ function isOriginAllowed(origin) {
 const ipConnections = new Map();
 let lastBroadcastTime = 0;
 
+// ── Per-IP HTTP Rate Limiting (sliding window) ────────────
+
+const HTTP_RATE_LIMIT = 60;         // requests per window
+const HTTP_RATE_WINDOW_MS = 60_000; // 1 minute window
+
+/** @type {Map<string, {count: number, windowStart: number}>} */
+const httpRateBuckets = new Map();
+
+function checkHttpRateLimit(ip) {
+  const now = Date.now();
+  const bucket = httpRateBuckets.get(ip);
+  if (!bucket || (now - bucket.windowStart) > HTTP_RATE_WINDOW_MS) {
+    httpRateBuckets.set(ip, { count: 1, windowStart: now });
+    return true;
+  }
+  bucket.count++;
+  return bucket.count <= HTTP_RATE_LIMIT;
+}
+
+// Cleanup stale HTTP rate buckets every 5 minutes
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, bucket] of httpRateBuckets) {
+    if (now - bucket.windowStart > HTTP_RATE_WINDOW_MS * 2) {
+      httpRateBuckets.delete(ip);
+    }
+  }
+}, 5 * 60 * 1000).unref();
+
+// ── Per-IP WebSocket Connect Rate Limiting ────────────────
+
+const WS_CONNECT_RATE_LIMIT = 10;       // connections per window
+const WS_CONNECT_RATE_WINDOW_MS = 60_000;
+
+/** @type {Map<string, {count: number, windowStart: number}>} */
+const wsConnectRateBuckets = new Map();
+
+function checkWsConnectRate(ip) {
+  const now = Date.now();
+  const bucket = wsConnectRateBuckets.get(ip);
+  if (!bucket || (now - bucket.windowStart) > WS_CONNECT_RATE_WINDOW_MS) {
+    wsConnectRateBuckets.set(ip, { count: 1, windowStart: now });
+    return true;
+  }
+  bucket.count++;
+  return bucket.count <= WS_CONNECT_RATE_LIMIT;
+}
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, bucket] of wsConnectRateBuckets) {
+    if (now - bucket.windowStart > WS_CONNECT_RATE_WINDOW_MS * 2) {
+      wsConnectRateBuckets.delete(ip);
+    }
+  }
+}, 5 * 60 * 1000).unref();
+
 // ── Agent Registry ────────────────────────────────────────
 
 /** @type {Map<string, {ws: WebSocket, name: string, workspace: string, skills: string[], connectedAt: number, lastPing: number}>} */
@@ -80,6 +137,14 @@ const REQUEST_TIMEOUT = 180_000; // 3 min per task
 function createRequestHandler(req, res) {
   // REST API for bot-side queries (no WebSocket needed)
   res.setHeader('Content-Type', 'application/json');
+
+  // Per-IP HTTP rate limiting
+  const reqIp = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
+  if (!checkHttpRateLimit(reqIp)) {
+    res.writeHead(429);
+    res.end(JSON.stringify({ error: 'Too many requests — rate limited' }));
+    return;
+  }
 
   // CORS: restrict to allowed origins
   const origin = req.headers['origin'] || '';
@@ -213,6 +278,13 @@ const wss = new WebSocketServer({ server: httpServer, maxPayload: MAX_WS_PAYLOAD
 
 wss.on('connection', (ws, req) => {
   const ip = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
+
+  // Per-IP connect rate limit (prevents rapid open/close attacks)
+  if (!checkWsConnectRate(ip)) {
+    log('warn', `Rejected connection from ${ip} — connect rate limit`);
+    ws.close(4006, 'Too many connection attempts');
+    return;
+  }
 
   // Per-IP connection limit
   const currentCount = ipConnections.get(ip) || 0;

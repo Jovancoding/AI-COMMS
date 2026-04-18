@@ -29,6 +29,21 @@ function rotateIfNeeded() {
   }
 }
 
+function atomicAppend(line) {
+  // Write to temp file then append — survives crashes during rotate
+  const tmp = LOG_FILE + '.tmp';
+  try {
+    rotateIfNeeded();
+    fs.writeFileSync(tmp, line, 'utf8');
+    fs.appendFileSync(LOG_FILE, fs.readFileSync(tmp, 'utf8'));
+    fs.unlinkSync(tmp);
+  } catch (err) {
+    // Fallback: direct append
+    try { fs.appendFileSync(LOG_FILE, line, 'utf8'); } catch { /* last resort */ }
+    try { fs.unlinkSync(tmp); } catch { /* cleanup */ }
+  }
+}
+
 export function auditLog(level, event, details = {}) {
   const entry = {
     timestamp: new Date().toISOString(),
@@ -46,10 +61,9 @@ export function auditLog(level, event, details = {}) {
     console.log(`[Audit][${level}] ${event}`);
   }
 
-  // Persistent file output
+  // Persistent file output (atomic)
   try {
-    rotateIfNeeded();
-    fs.appendFileSync(LOG_FILE, line, 'utf8');
+    atomicAppend(line);
   } catch (err) {
     console.error('[Audit] Failed to write log:', err.message);
   }

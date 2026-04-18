@@ -12,12 +12,21 @@ const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 12;       // GCM standard
 const TAG_LENGTH = 16;      // 128-bit auth tag
 const ENCODING = 'base64';
+const KDF_ITERATIONS = 100_000;
+const KDF_SALT = 'ai-comms-v1';  // static salt — key uniqueness comes from secret
+
+let _cachedKey = null;
+let _cachedSecret = null;
 
 function getKey() {
   const secret = config.security.encryptionKey;
   if (!secret) return null;
-  // Derive a 256-bit key from the user-provided secret via SHA-256
-  return crypto.createHash('sha256').update(secret).digest();
+  // Cache: only re-derive if secret changes
+  if (_cachedKey && _cachedSecret === secret) return _cachedKey;
+  // Derive a 256-bit key using PBKDF2 (resists brute-force on weak secrets)
+  _cachedKey = crypto.pbkdf2Sync(secret, KDF_SALT, KDF_ITERATIONS, 32, 'sha256');
+  _cachedSecret = secret;
+  return _cachedKey;
 }
 
 /**

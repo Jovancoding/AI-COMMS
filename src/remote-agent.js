@@ -7,7 +7,7 @@
 
 import fs from 'fs';
 import path from 'path';
-import { execSync } from 'child_process';
+import { execFileSync } from 'child_process';
 import config from './config.js';
 import { chatWithFailover } from './failover.js';
 import { auditLog } from './audit-log.js';
@@ -29,6 +29,19 @@ const BLOCKED_COMMANDS = [
   'npm publish', 'npm unpublish', 'git push --force',
   'DROP DATABASE', 'DROP TABLE', 'TRUNCATE',
 ];
+
+// Shell metacharacters that indicate injection attempts
+const SHELL_METACHAR_RE = /[;&|`$(){}]|&&|\|\||\$\(|<\(|>\(/;
+
+// Allowed first-word commands (whitelist)
+const ALLOWED_EXECUTABLES = new Set([
+  'node', 'npm', 'npx', 'git', 'ls', 'dir', 'cat', 'head', 'tail',
+  'echo', 'grep', 'find', 'pwd', 'cd', 'mkdir', 'cp', 'mv',
+  'python', 'python3', 'pip', 'pip3',
+  'tsc', 'eslint', 'prettier', 'jest', 'vitest', 'mocha',
+  'docker', 'docker-compose',
+  'curl', 'wget',  // allowed standalone (not piped)
+]);
 
 // File paths that are never writable
 const PROTECTED_PATHS = [
@@ -81,7 +94,14 @@ function isRemoteAgentAllowed(sender) {
 
 function isCommandBlocked(command) {
   const lower = command.toLowerCase();
-  return BLOCKED_COMMANDS.some(blocked => lower.includes(blocked.toLowerCase()));
+  // Blacklist check
+  if (BLOCKED_COMMANDS.some(blocked => lower.includes(blocked.toLowerCase()))) return true;
+  // Shell metacharacter injection check
+  if (SHELL_METACHAR_RE.test(command)) return true;
+  // Whitelist check: first word must be an allowed executable
+  const firstWord = command.trim().split(/\s+/)[0].toLowerCase();
+  if (!ALLOWED_EXECUTABLES.has(firstWord)) return true;
+  return false;
 }
 
 function isPathProtected(filePath) {
@@ -149,7 +169,11 @@ function executeEdit(step) {
 
 function executeRun(step) {
   try {
-    const output = execSync(step.command, {
+    // Split command into executable + args (no shell interpretation)
+    const parts = step.command.trim().split(/\s+/);
+    const cmd = parts[0];
+    const args = parts.slice(1);
+    const output = execFileSync(cmd, args, {
       cwd: WORKSPACE,
       timeout: MAX_EXEC_TIMEOUT_MS,
       encoding: 'utf8',

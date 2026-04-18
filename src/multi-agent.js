@@ -22,12 +22,32 @@ const MAX_TASK_MESSAGE_LENGTH = 10_000; // max chars per task message
 
 // ── URL Validation (SSRF prevention) ───────────────────
 
+const PRIVATE_IP_RANGES = [
+  /^127\./,                             // loopback
+  /^10\./,                              // RFC 1918 Class A
+  /^172\.(1[6-9]|2\d|3[01])\./,        // RFC 1918 Class B
+  /^192\.168\./,                        // RFC 1918 Class C
+  /^169\.254\./,                        // link-local
+  /^0\./,                               // current network
+  /^::1$/,                              // IPv6 loopback
+  /^fc00:/i,                            // IPv6 unique local
+  /^fe80:/i,                            // IPv6 link-local
+];
+
+function isPrivateHost(hostname) {
+  return PRIVATE_IP_RANGES.some(re => re.test(hostname))
+    || hostname === 'localhost'
+    || hostname === '[::1]';
+}
+
 function isAllowedAgentUrl(urlStr) {
   try {
     const parsed = new URL(urlStr);
     if (!['http:', 'https:'].includes(parsed.protocol)) return false;
-    // In direct mode (local network), allow private IPs
-    // In production, restrict further via firewall rules
+    // Block private/loopback unless ALLOW_PRIVATE_AGENTS is set
+    if (!process.env.ALLOW_PRIVATE_AGENTS && isPrivateHost(parsed.hostname)) {
+      return false;
+    }
     return true;
   } catch {
     return false;

@@ -25,8 +25,8 @@ export function isAdmin(sender) {
 export async function handleAdminCommand(sender, text) {
   if (!text.startsWith('!')) return null;
   if (!isAdmin(sender)) {
-    auditLog('WARN', 'unauthorized-admin-attempt', { sender, command: text.slice(0, 50) });
-    return null; // silently ignore — don't reveal admin commands exist
+    auditLog('WARN', 'unauthorized-admin-attempt', { sender, command: text.slice(0, 50), ip: 'n/a' });
+    return null; // silently ignore — don't reveal admin commands exist (logged above)
   }
 
   const parts = text.slice(1).trim().split(/\s+/);
