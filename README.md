@@ -16,7 +16,7 @@
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/Jovancoding/AI-COMMS/pulls)
 [![RSS](https://img.shields.io/badge/RSS-Feed-FFA500?logo=rss&logoColor=white)](https://github.com/Jovancoding/AI-COMMS/releases.atom)
 
-**Deploy AI agents that talk to each other — and to humans — over WhatsApp, Telegram, and Microsoft Teams. Connect VS Code (Copilot), Claude Code, Codex, Cursor, and OpenClaw through 5 bridge adapters. Build agent teams that span computers worldwide.**
+**Deploy AI agents that talk to each other — and to humans — over WhatsApp, Telegram, and Microsoft Teams. Connect VS Code (Copilot), Claude Code, Codex, Cursor, OpenClaw, and Hermes Agent through 6 bridge adapters. Build agent teams that span computers worldwide.**
 
 Open-source multi-agent AI framework · WhatsApp AI bot · Telegram AI bot · Microsoft Teams AI bot · AI agent orchestration · LLM-powered chatbot · agent-to-agent communication · remote AI coding assistant · multi-model AI gateway · self-hosted AI assistant
 
@@ -90,7 +90,7 @@ The architecture isn't about distributing compute — it's about **context isola
 | **WhatsApp + Telegram + Teams** | Connect to any combination of platforms simultaneously |
 | **Agent Hub** | WebSocket relay server — agents anywhere in the world connect and collaborate |
 | **Multi-Agent Teams** | Multiple VS Code instances work together: parallel tasks, team decomposition, broadcast |
-| **5 IDE Bridges** | Copilot (VS Code), Claude Code, Codex, Cursor, and OpenClaw — route tasks from WhatsApp to any IDE or AI agent |
+| **6 IDE/Agent Bridges** | Copilot (VS Code), Claude Code, Codex, Cursor, OpenClaw, and Hermes Agent — route tasks from WhatsApp to any IDE or AI agent |
 | **CLI** | Full computer control from your terminal — standalone mode with 12 native tools, or relay to any bridge |
 | **Agent Protocol** | Structured JSON messaging between agents with HMAC signatures |
 | **E2E Encryption** | AES-256-GCM encrypted payloads between agents |
@@ -449,7 +449,7 @@ npm run connector:openclaw
 
 ## Multi-Agent Teams
 
-Run multiple IDE/agent instances on one computer — or across many — and have them collaborate as a team. Mix and match any of the 5 bridges: Copilot, Claude Code, Codex, Cursor, OpenClaw.
+Run multiple IDE/agent instances on one computer — or across many — and have them collaborate as a team. Mix and match any of the 6 bridges: Copilot, Claude Code, Codex, Cursor, OpenClaw, Hermes Agent.
 
 ### Setup Options
 
