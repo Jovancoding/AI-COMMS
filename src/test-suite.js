@@ -437,6 +437,31 @@ testAsync('handleOpenClawBridge returns error when bridge is down', async () => 
 // Wait for async OpenClaw bridge tests
 await new Promise(r => setTimeout(r, 4000));
 
+// --- 8f. Hermes Agent Bridge ---
+console.log('\n[Hermes Agent Bridge]');
+const hermesBridge = await import('./hermes-bridge.js');
+
+test('isHermesRequest detects !hermes prefix', () => {
+  assert(hermesBridge.isHermesRequest('!hermes fix the tests'), '!hermes should match');
+  assert(hermesBridge.isHermesRequest('!ha run diagnostics'), '!ha should match');
+  assert(!hermesBridge.isHermesRequest('hello'), 'plain text should not match');
+  assert(!hermesBridge.isHermesRequest(''), 'empty should not match');
+  assert(!hermesBridge.isHermesRequest(null), 'null should not match');
+});
+
+testAsync('isHermesBridgeAvailable returns false when bridge is down', async () => {
+  const available = await hermesBridge.isHermesBridgeAvailable();
+  assert(available === false, 'bridge should not be available in test');
+});
+
+testAsync('handleHermesBridge returns error when bridge is down', async () => {
+  const result = await hermesBridge.handleHermesBridge('test@s.whatsapp.net', '!hermes hello');
+  assert(result.includes('not running'), 'should report Hermes not running');
+});
+
+// Wait for async Hermes bridge tests
+await new Promise(r => setTimeout(r, 4000));
+
 // --- 8g. OpenClaw Hub Connector ---
 console.log('\n[OpenClaw Hub Connector]');
 const hubConnector = await import('./openclaw-hub-connector.js');

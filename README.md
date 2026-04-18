@@ -534,7 +534,7 @@ Local LLMs running on Raspberry Pis, NVIDIA Jetsons, or any device with Node.js.
 
 ## Bridges
 
-AI COMMS supports 5 IDE/AI bridges — each connects a different coding agent to your WhatsApp/Telegram messages via a local HTTP server.
+AI COMMS supports 6 IDE/AI bridges — each connects a different coding agent to your WhatsApp/Telegram messages via a local HTTP server.
 
 ### How Bridges Work
 
@@ -543,7 +543,8 @@ WhatsApp/Telegram ──► Bot (Node.js) ──┬── Copilot Bridge  (VS Co
                                       ├── Claude Code     (CLI agent,   :3121)
                                       ├── Codex           (CLI agent,   :3122)
                                       ├── Cursor          (Cursor IDE,  :3123)
-                                      └── OpenClaw        (Personal AI, :3124)
+                                      ├── OpenClaw        (Personal AI, :3124)
+                                      └── Hermes Agent    (Nous Research,:8642)
 ```
 
 1. A message arrives on WhatsApp or Telegram with a prefix (`!copilot`, `!claude`, `!codex`, `!cursor`, `!claw`)
@@ -622,6 +623,28 @@ OPENCLAW_BRIDGE_TOKEN=your-shared-token
 ```
 
 Requires OpenClaw running: `openclaw gateway --port 18789`
+
+### Hermes Agent Bridge
+
+Routes tasks to a running [Hermes Agent](https://github.com/NousResearch/hermes-agent) by Nous Research. Hermes is a self-improving AI agent with 40+ tools, skills, memory, cron scheduling, and multi-platform messaging. AI COMMS talks directly to its OpenAI-compatible API server.
+
+| Prefix | Example |
+|--------|--------|
+| `!hermes` / `!ha` | `!hermes research competitor pricing and summarize in a table` |
+
+```bash
+HERMES_API_URL=http://127.0.0.1:8642
+HERMES_API_KEY=your-api-server-key
+```
+
+Requires Hermes Agent running with API server enabled:
+```bash
+# In ~/.hermes/.env
+API_SERVER_ENABLED=true
+API_SERVER_KEY=your-api-server-key
+# Then start:
+hermes gateway
+```
 
 ### Bridge API Contract
 

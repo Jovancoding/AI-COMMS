@@ -28,6 +28,7 @@ import { isClaudeCodeRequest, handleClaudeCodeBridge } from './claude-code-bridg
 import { isCodexRequest, handleCodexBridge } from './codex-bridge.js';
 import { isCursorRequest, handleCursorBridge } from './cursor-bridge.js';
 import { isOpenClawRequest, handleOpenClawBridge } from './openclaw-bridge.js';
+import { isHermesRequest, handleHermesBridge } from './hermes-bridge.js';
 import { isMultiAgentCommand, handleMultiAgentCommand } from './multi-agent.js';
 
 const BASE_PROMPT = `You are ${config.agent.name}, a personal AI assistant connected to WhatsApp.
@@ -127,6 +128,15 @@ export async function handleMessage(sender, text, whatsappClient, isGroup = fals
     if (isOpenClawRequest(text)) {
       auditLog('INFO', 'openclaw-bridge-request', { sender, length: text.length });
       const result = await handleOpenClawBridge(sender, text);
+      await whatsappClient.sendMessage(sender, result);
+      recordOutgoing();
+      return;
+    }
+
+    // Hermes Agent Bridge: !hermes / !ha prefix
+    if (isHermesRequest(text)) {
+      auditLog('INFO', 'hermes-bridge-request', { sender, length: text.length });
+      const result = await handleHermesBridge(sender, text);
       await whatsappClient.sendMessage(sender, result);
       recordOutgoing();
       return;
