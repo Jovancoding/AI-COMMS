@@ -9,6 +9,7 @@
 [![npm downloads](https://img.shields.io/npm/dw/ai-comms?logo=npm&color=CB3837)](https://www.npmjs.com/package/ai-comms)
 [![Node.js](https://img.shields.io/badge/Node.js-%3E%3D20.0.0-green?logo=nodedotjs)](https://nodejs.org/)
 [![Providers](https://img.shields.io/badge/AI%20Providers-18-blue?logo=openai)](src/providers/)
+[![Bridges](https://img.shields.io/badge/Bridges-6-blueviolet?logo=visualstudiocode)](src/)
 [![WhatsApp](https://img.shields.io/badge/WhatsApp-Ready-25D366?logo=whatsapp&logoColor=white)](src/whatsapp/)
 [![Telegram](https://img.shields.io/badge/Telegram-Ready-26A5E4?logo=telegram&logoColor=white)](src/telegram/)
 [![Teams](https://img.shields.io/badge/Microsoft%20Teams-Ready-6264A7?logo=microsoftteams&logoColor=white)](src/teams/)
